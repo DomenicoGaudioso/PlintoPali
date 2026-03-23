@@ -1,4 +1,5 @@
 # PlintoPali - Analisi Statica e Sismica di Plinti su Pali
+![alt text](percorso/socialPlintoPali.png)
 
 Applicazione web interattiva basata su Streamlit per il calcolo e la verifica di fondazioni profonde (plinti su pali). Il tool esegue l'analisi della capacità portante del palo singolo e calcola la ripartizione dei carichi sui pali del gruppo in condizioni statiche e sismiche, tenendo conto della stratigrafia del terreno e della presenza di falda acquifera.
 
