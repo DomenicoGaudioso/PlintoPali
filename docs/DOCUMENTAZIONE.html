@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlintoPali - Documentazione Tecnica</title>
+    <style>
+        :root {
+            --primary: #1a3a5c;
+            --accent: #2980b9;
+            --accent2: #27ae60;
+            --danger: #e74c3c;
+            --warn: #f39c12;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --border: #dee2e6;
+            --text: #212529;
+            --text-light: #6c757d;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        /* HERO */
+        .hero {
+            background: linear-gradient(135deg, #1a3a5c 0%, #2c5f8a 100%);
+            color: white;
+            padding: 60px 20px 80px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--bg);
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+        }
+        .hero h1 {
+            font-size: 2.8em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+        .hero .subtitle {
+            font-size: 1.3em;
+            opacity: 0.9;
+            margin-bottom: 25px;
+        }
+        .hero .badges {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .badge.normativa {
+            background: var(--accent2);
+            border-color: var(--accent2);
+        }
+        .version {
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+
+        /* TOC */
+        .toc-container {
+            max-width: 1000px;
+            margin: -40px auto 30px;
+            padding: 0 20px;
+            position: relative;
+            z-index: 10;
+        }
+        .toc {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 25px 30px;
+        }
+        .toc h2 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 10px;
+        }
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 8px;
+        }
+        .toc a {
+            color: var(--accent);
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: block;
+            transition: all 0.2s;
+            font-size: 0.95em;
+        }
+        .toc a:hover {
+            background: #eef4fa;
+            padding-left: 16px;
+        }
+
+        /* MAIN CONTENT */
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 35px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        }
+        h2 {
+            color: var(--primary);
+            font-size: 1.6em;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--accent);
+        }
+        h3 {
+            color: var(--primary);
+            font-size: 1.2em;
+            margin: 25px 0 12px;
+        }
+        p {
+            margin-bottom: 15px;
+            color: var(--text);
+        }
+        ul, ol {
+            margin: 15px 0 15px 25px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+
+        /* FORMULA BOX */
+        .formula-box {
+            background: #f4f6f9;
+            border-left: 4px solid var(--accent);
+            padding: 20px 25px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+            font-family: 'Cambria Math', 'Times New Roman', serif;
+        }
+        .formula-box .formula-label {
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 0.85em;
+            color: var(--text-light);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .formula-box .formula {
+            font-size: 1.15em;
+            color: var(--primary);
+            line-height: 1.8;
+        }
+        .formula-box .formula sub {
+            font-size: 0.7em;
+        }
+
+        /* TABLES */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95em;
+        }
+        thead {
+            background: var(--primary);
+            color: white;
+        }
+        th {
+            padding: 14px 16px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        tbody tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        tbody tr:hover {
+            background: #eef4fa;
+        }
+
+        /* CARDS */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 4px solid var(--accent);
+        }
+        .card.success { border-left-color: var(--accent2); }
+        .card.warning { border-left-color: var(--warn); }
+        .card.danger { border-left-color: var(--danger); }
+        .card h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 1.05em;
+        }
+
+        /* BADGES */
+        .badge-verde {
+            background: var(--accent2);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.78em;
+            font-weight: 600;
+        }
+        .badge-rosso {
+            background: var(--danger);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.78em;
+            font-weight: 600;
+        }
+        .badge-giallo {
+            background: var(--warn);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.78em;
+            font-weight: 600;
+        }
+
+        /* SVG DIAGRAMS */
+        .diagram-container {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .diagram-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.05em;
+        }
+        svg text {
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        /* INFO BOX */
+        .info-box {
+            background: #e8f4fd;
+            border: 1px solid #b8daef;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin: 15px 0;
+        }
+        .info-box.success {
+            background: #e8f5e9;
+            border-color: #a5d6a7;
+        }
+        .info-box.warning {
+            background: #fff8e1;
+            border-color: #ffe082;
+        }
+
+        /* FOOTER */
+        footer {
+            background: var(--primary);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            margin-top: 40px;
+        }
+        footer .disclaimer {
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 0.85em;
+            opacity: 0.8;
+            line-height: 1.7;
+        }
+        footer .copyright {
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.7;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2em; }
+            .hero .subtitle { font-size: 1.1em; }
+            section { padding: 25px 20px; }
+            .toc { padding: 20px; }
+            .card-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HERO -->
+    <div class="hero">
+        <h1>PlintoPali</h1>
+        <p class="subtitle">Analisi Statica e Sismica di Plinti su Pali</p>
+        <div class="badges">
+            <span class="badge normativa">NTC 2018</span>
+            <span class="badge normativa">Eurocodice 7</span>
+            <span class="badge">Geotecnica</span>
+            <span class="badge">Fondazioni Profonde</span>
+        </div>
+        <p class="version">Versione 1.0 — Documentazione Tecnica</p>
+    </div>
+
+    <!-- TOC -->
+    <div class="toc-container">
+        <div class="toc">
+            <h2>Indice Documentazione</h2>
+            <div class="toc-grid">
+                <a href="#panoramica">1. Panoramica Generale</a>
+                <a href="#funzionalita">2. Funzionalita Principali</a>
+                <a href="#geometria">3. Schema Geometrico</a>
+                <a href="#input">4. Parametri di Input</a>
+                <a href="#output">5. Output Calcolati</a>
+                <a href="#normativa">6. Riferimenti Normativi</a>
+                <a href="#formule">7. Metodologia di Calcolo</a>
+                <a href="#esempio">8. Esempio di Utilizzo</a>
+                <a href="#glossario">9. Glossario Termini Tecnici</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- PANORAMICA -->
+        <section id="panoramica">
+            <h2>1. Panoramica Generale</h2>
+            <p>
+                <strong>PlintoPali</strong> e uno strumento avanzato per l'analisi di fondazioni profonde che combina
+                verifiche geotecniche e strutturali in un'unica piattaforma integrata. L'applicazione esegue il calcolo
+                della capacita portante del palo singolo e la ripartizione dei carichi sui gruppi di pali in condizioni
+                statiche e sismiche.
+            </p>
+            <p>
+                Il tool tiene conto della stratigrafia del terreno, della presenza di falda acquifera e degli effetti
+                di gruppo, fornendo al progettista un quadro completo dello stato tensionale e deformativo della
+                fondazione profonda.
+            </p>
+
+            <h3>Campo di Applicazione</h3>
+            <div class="card-grid">
+                <div class="card success">
+                    <h4>Edifici e Strutture</h4>
+                    <p>Progettazione di fondazioni per edifici civili e industriali su terreni scadenti.</p>
+                </div>
+                <div class="card success">
+                    <h4>Infrastrutture</h4>
+                    <p>Analisi di pile e spalle di ponti, torri,桟杆 e strutture alte soggette a vento e sisma.</p>
+                </div>
+                <div class="card success">
+                    <h4>Opere di Sostegno</h4>
+                    <p>Verifica di paratie e pareti multi-ancorate con plinti su pali di fondazione.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FUNZIONALITA -->
+        <section id="funzionalita">
+            <h2>2. Funzionalita Principali</h2>
+            <p>L'applicazione offre un set completo di strumenti per l'analisi delle fondazioni su pali:</p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h4>Capacita Portante Palo Singolo</h4>
+                    <p>Calcolo della portata di punta e laterale con metodi Beta e Alfa, considerando la falda.</p>
+                    <span class="badge-verde">VERIFICATO</span>
+                </div>
+                <div class="card">
+                    <h4>Ripartizione Carichi Rigida</h4>
+                    <p>Ipotesi di plinto infinitamente rigido con risoluzione del sistema di Navier.</p>
+                    <span class="badge-verde">VERIFICATO</span>
+                </div>
+                <div class="card">
+                    <h4>Analisi FEM Flessibile</h4>
+                    <p>Modellazione a graticcio con molle geotecniche per plinto flessibile.</p>
+                    <span class="badge-verde">VERIFICATO</span>
+                </div>
+                <div class="card">
+                    <h4>Effetto Gruppo Pali</h4>
+                    <p>Valutazione interferenza tra pali secondo formula di Converse-Labarre.</p>
+                    <span class="badge-verde">VERIFICATO</span>
+                </div>
+                <div class="card">
+                    <h4>Stima Cedimenti</h4>
+                    <p>Metodo della zattera equivalente per cedimento del gruppo di pali.</p>
+                    <span class="badge-verde">VERIFICATO</span>
+                </div>
+                <div class="card">
+                    <h4>Verifica Puntoni e Tiranti</h4>
+                    <p>Calcolo trazioni nella piastra secondo modello Strut-and-Tie.</p>
+                    <span class="badge-verde">VERIFICATO</span>
+                </div>
+            </div>
+
+            <h3>Diagramma del Flusso di Analisi</h3>
+            <div class="diagram-container">
+                <div class="diagram-title">Flusso Operativo dell'Analisi</div>
+                <svg width="700" height="380" viewBox="0 0 700 380" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Sfondo griglia -->
+                    <defs>
+                        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f0f0f0" stroke-width="0.5"/>
+                        </pattern>
+                    </defs>
+                    <rect width="700" height="380" fill="url(#grid)"/>
+
+                    <!-- Input Block -->
+                    <rect x="250" y="10" width="200" height="50" rx="8" fill="#1a3a5c" stroke="#0d2137" stroke-width="2"/>
+                    <text x="350" y="42" text-anchor="middle" fill="white" font-weight="600" font-size="14">INPUT GEOMETRICI</text>
+                    
+                    <!-- Arrow -->
+                    <path d="M 350 60 L 350 85" stroke="#2980b9" stroke-width="3" marker-end="url(#arrowhead)"/>
+                    
+                    <!-- Geotecnica Block -->
+                    <rect x="230" y="85" width="240" height="50" rx="8" fill="#2980b9" stroke="#1a3a5c" stroke-width="2"/>
+                    <text x="350" y="117" text-anchor="middle" fill="white" font-weight="600" font-size="14">DATI GEOTECNICI</text>
+
+                    <!-- Arrow -->
+                    <path d="M 350 135 L 350 160" stroke="#2980b9" stroke-width="3" marker-end="url(#arrowhead)"/>
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#2980b9"/>
+                        </marker>
+                    </defs>
+
+                    <!-- Stratigrafia Block -->
+                    <rect x="250" y="160" width="200" height="50" rx="8" fill="#27ae60" stroke="#1e8449" stroke-width="2"/>
+                    <text x="350" y="192" text-anchor="middle" fill="white" font-weight="600" font-size="14">STRATIGRAFIA</text>
+
+                    <!-- Branch -->
+                    <path d="M 350 210 L 350 235" stroke="#2980b9" stroke-width="3"/>
+                    <path d="M 350 235 L 120 235 L 120 260" stroke="#2980b9" stroke-width="3" marker-end="url(#arrowhead)"/>
+                    <path d="M 350 235 L 350 260" stroke="#2980b9" stroke-width="3" marker-end="url(#arrowhead)"/>
+                    <path d="M 350 235 L 580 235 L 580 260" stroke="#2980b9" stroke-width="3" marker-end="url(#arrowhead)"/>
+
+                    <!-- Qult Block -->
+                    <rect x="30" y="260" width="180" height="55" rx="8" fill="#e74c3c" stroke="#c0392b" stroke-width="2"/>
+                    <text x="120" y="283" text-anchor="middle" fill="white" font-weight="600" font-size="12">CAPACITA PORTANTE</text>
+                    <text x="120" y="300" text-anchor="middle" fill="white" font-size="11">Qult = Qb + Qs</text>
+
+                    <!-- Ripartizione Block -->
+                    <rect x="260" y="260" width="180" height="55" rx="8" fill="#2980b9" stroke="#1a3a5c" stroke-width="2"/>
+                    <text x="350" y="283" text-anchor="middle" fill="white" font-weight="600" font-size="12">RIPARTIZIONE CARICHI</text>
+                    <text x="350" y="300" text-anchor="middle" fill="white" font-size="11">Rigido + FEM</text>
+
+                    <!-- Effetto Gruppo Block -->
+                    <rect x="490" y="260" width="180" height="55" rx="8" fill="#f39c12" stroke="#d68910" stroke-width="2"/>
+                    <text x="580" y="283" text-anchor="middle" fill="white" font-weight="600" font-size="12">EFFETTO GRUPPO</text>
+                    <text x="580" y="300" text-anchor="middle" fill="white" font-size="11">Converse-Labarre</text>
+
+                    <!-- Converge -->
+                    <path d="M 120 315 L 120 340" stroke="#2980b9" stroke-width="2"/>
+                    <path d="M 350 315 L 350 340" stroke="#2980b9" stroke-width="2"/>
+                    <path d="M 580 315 L 580 340" stroke="#2980b9" stroke-width="2"/>
+                    <path d="M 120 340 L 580 340" stroke="#2980b9" stroke-width="2"/>
+                    <path d="M 350 340 L 350 355" stroke="#2980b9" stroke-width="3" marker-end="url(#arrowhead)"/>
+
+                    <!-- Output Block -->
+                    <rect x="260" y="355" width="180" height="22" rx="6" fill="#1a3a5c" stroke="#0d2137" stroke-width="2"/>
+                    <text x="350" y="370" text-anchor="middle" fill="white" font-weight="600" font-size="12">RISULTATI E VERIFICHE</text>
+
+                    <!-- Legend -->
+                    <rect x="15" y="10" width="12" height="12" fill="#1a3a5c"/>
+                    <text x="32" y="20" fill="#333" font-size="10">Input</text>
+                    <rect x="15" y="27" width="12" height="12" fill="#2980b9"/>
+                    <text x="32" y="37" fill="#333" font-size="10">Processo</text>
+                    <rect x="15" y="44" width="12" height="12" fill="#27ae60"/>
+                    <text x="32" y="54" fill="#333" font-size="10">Dati</text>
+                    <rect x="15" y="61" width="12" height="12" fill="#e74c3c"/>
+                    <text x="32" y="71" fill="#333" font-size="10">Calcolo</text>
+                    <rect x="15" y="78" width="12" height="12" fill="#f39c12"/>
+                    <text x="32" y="88" fill="#333" font-size="10">Correzione</text>
+                </svg>
+            </div>
+        </section>
+
+        <!-- GEOMETRIA -->
+        <section id="geometria">
+            <h2>3. Schema Geometrico della Fondazione Composta</h2>
+            <p>
+                La fondazione oggetto di analisi e costituita da un plinto rigido in calcestruzzo armato appoggiato
+                su un gruppo di pali cilindrici trivellati. La geometria e completamente parametrizzata.
+            </p>
+
+            <div class="diagram-container">
+                <div class="diagram-title">Sezione Trasversale e Pianta del Plinto su Pali</div>
+                <svg width="700" height="500" viewBox="0 0 700 500" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Coordinate system -->
+                    <defs>
+                        <pattern id="grid2" width="20" height="20" patternUnits="userSpaceOnUse">
+                            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e8e8e8" stroke-width="0.5"/>
+                        </pattern>
+                        <linearGradient id="plintoGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#a0b4c8;stop-opacity:1"/>
+                            <stop offset="100%" style="stop-color:#708090;stop-opacity:1"/>
+                        </linearGradient>
+                        <linearGradient id="clsGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#d3d3d3;stop-opacity:1"/>
+                            <stop offset="100%" style="stop-color:#a9a9a9;stop-opacity:1"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="700" height="500" fill="url(#grid2)"/>
+
+                    <!-- PIANTA (a sinistra) -->
+                    <g transform="translate(30, 20)">
+                        <text x="95" y="0" text-anchor="middle" fill="#1a3a5c" font-weight="700" font-size="14">PIANTA</text>
+                        
+                        <!-- Plinto -->
+                        <rect x="10" y="30" width="170" height="170" fill="url(#plintoGrad)" stroke="#1a3a5c" stroke-width="2" rx="3"/>
+                        
+                        <!-- Pali in pianta -->
+                        <circle cx="55" cy="75" r="14" fill="#8b4513" stroke="#5d2f0d" stroke-width="2"/>
+                        <text x="55" y="79" text-anchor="middle" fill="white" font-size="9" font-weight="bold">1</text>
+                        
+                        <circle cx="95" cy="75" r="14" fill="#8b4513" stroke="#5d2f0d" stroke-width="2"/>
+                        <text x="95" y="79" text-anchor="middle" fill="white" font-size="9" font-weight="bold">2</text>
+                        
+                        <circle cx="135" cy="75" r="14" fill="#8b4513" stroke="#5d2f0d" stroke-width="2"/>
+                        <text x="135" y="79" text-anchor="middle" fill="white" font-size="9" font-weight="bold">3</text>
+                        
+                        <circle cx="55" cy="115" r="14" fill="#8b4513" stroke="#5d2f0d" stroke-width="2"/>
+                        <text x="55" y="119" text-anchor="middle" fill="white" font-size="9" font-weight="bold">4</text>
+                        
+                        <circle cx="95" cy="115" r="14" fill="#8b4513" stroke="#5d2f0d" stroke-width="2"/>
+                        <text x="95" y="119" text-anchor="middle" fill="white" font-size="9" font-weight="bold">5</text>
+                        
+                        <circle cx="135" cy="115" r="14" fill="#8b4513" stroke="#5d2f0d" stroke-width="2"/>
+                        <text x="135" y="119" text-anchor="middle" fill="white" font-size="9" font-weight="bold">6</text>
+                        
+                        <circle cx="55" cy="155" r="14" fill="#8b4513" stroke="#5d2f0d" stroke-width="2"/>
+                        <text x="55" y="159" text-anchor="middle" fill="white" font-size="9" font-weight="bold">7</text>
+                        
+                        <circle cx="95" cy="155" r="14" fill="#8b4513" stroke="#5d2f0d" stroke-width="2"/>
+                        <text x="95" y="159" text-anchor="middle" fill="white" font-size="9" font-weight="bold">8</text>
+                        
+                        <circle cx="135" cy="155" r="14" fill="#8b4513" stroke="#5d2f0d" stroke-width="2"/>
+                        <text x="135" y="159" text-anchor="middle" fill="white" font-size="9" font-weight="bold">9</text>
+                        
+                        <!-- Baricentro -->
+                        <circle cx="95" cy="115" r="5" fill="#e74c3c" stroke="#c0392b" stroke-width="2"/>
+                        <text x="95" y="108" text-anchor="middle" fill="#e74c3c" font-size="9" font-weight="bold">G</text>
+                        
+                        <!-- Dimensioni -->
+                        <line x1="10" y1="215" x2="180" y2="215" stroke="#1a3a5c" stroke-width="1.5"/>
+                        <line x1="10" y1="210" x2="10" y2="220" stroke="#1a3a5c" stroke-width="1.5"/>
+                        <line x1="180" y1="210" x2="180" y2="220" stroke="#1a3a5c" stroke-width="1.5"/>
+                        <text x="95" y="230" text-anchor="middle" fill="#1a3a5c" font-size="11" font-weight="600">B</text>
+                        
+                        <line x1="195" y1="30" x2="195" y2="200" stroke="#1a3a5c" stroke-width="1.5"/>
+                        <line x1="190" y1="30" x2="200" y2="30" stroke="#1a3a5c" stroke-width="1.5"/>
+                        <line x1="190" y1="200" x2="200" y2="200" stroke="#1a3a5c" stroke-width="1.5"/>
+                        <text x="205" y="120" text-anchor="middle" fill="#1a3a5c" font-size="11" font-weight="600" transform="rotate(90, 205, 120)">L</text>
+                        
+                        <!-- Interassi -->
+                        <line x1="55" y1="75" x2="95" y2="75" stroke="#27ae60" stroke-width="1" stroke-dasharray="4"/>
+                        <text x="75" y="68" text-anchor="middle" fill="#27ae60" font-size="9">ix</text>
+                        
+                        <line x1="55" y1="75" x2="55" y2="115" stroke="#27ae60" stroke-width="1" stroke-dasharray="4"/>
+                        <text x="48" y="98" text-anchor="middle" fill="#27ae60" font-size="9">iy</text>
+                        
+                        <!-- Legenda -->
+                        <rect x="10" y="250" width="15" height="15" fill="url(#plintoGrad)" stroke="#1a3a5c"/>
+                        <text x="30" y="262" fill="#333" font-size="10">Plinto</text>
+                        <circle cx="17" cy="280" r="8" fill="#8b4513"/>
+                        <text x="30" y="284" fill="#333" font-size="10">Palo</text>
+                        <circle cx="17" cy="298" r="4" fill="#e74c3c"/>
+                        <text x="30" y="302" fill="#333" font-size="10">Baricentro</text>
+                    </g>
+
+                    <!-- SEZIONE (a destra) -->
+                    <g transform="translate(350, 20)">
+                        <text x="150" y="0" text-anchor="middle" fill="#1a3a5c" font-weight="700" font-size="14">SEZIONE A-A</text>
+                        
+                        <!-- Terrapieno -->
+                        <rect x="0" y="160" width="300" height="80" fill="#d2b48c" stroke="#8b7355" stroke-width="1"/>
+                        <text x="150" y="200" text-anchor="middle" fill="#5d4e37" font-size="10">TERRENO</text>
+                        
+                        <!-- Falda -->
+                        <rect x="0" y="140" width="300" height="20" fill="rgba(30, 144, 255, 0.3)" stroke="#1e90ff" stroke-width="1" stroke-dasharray="5,3"/>
+                        <text x="260" y="155" fill="#1e90ff" font-size="9">FALDA</text>
+                        
+                        <!-- Palo sinistro -->
+                        <rect x="50" y="180" width="20" height="260" fill="url(#clsGrad)" stroke="#696969" stroke-width="1"/>
+                        <line x1="60" y1="180" x2="60" y2="440" stroke="#808080" stroke-width="1"/>
+                        <text x="60" y="230" text-anchor="middle" fill="#333" font-size="8" transform="rotate(90, 60, 230)">Palo D,L</text>
+                        
+                        <!-- Palo centrale -->
+                        <rect x="140" y="180" width="20" height="260" fill="url(#clsGrad)" stroke="#696969" stroke-width="1"/>
+                        
+                        <!-- Palo destro -->
+                        <rect x="230" y="180" width="20" height="260" fill="url(#clsGrad)" stroke="#696969" stroke-width="1"/>
+                        
+                        <!-- Plinto -->
+                        <rect x="30" y="140" width="240" height="40" fill="url(#plintoGrad)" stroke="#1a3a5c" stroke-width="2" rx="2"/>
+                        
+                        <!-- Carichi -->
+                        <line x1="150" y1="100" x2="150" y2="140" stroke="#e74c3c" stroke-width="3"/>
+                        <polygon points="145,105 155,105 150,95" fill="#e74c3c"/>
+                        <text x="150" y="90" text-anchor="middle" fill="#e74c3c" font-size="11" font-weight="600">N, Mx, My</text>
+                        
+                        <!-- Quote -->
+                        <line x1="20" y1="140" x2="290" y2="140" stroke="#1a3a5c" stroke-width="1" stroke-dasharray="5,3"/>
+                        <text x="300" y="144" fill="#1a3a5c" font-size="10">pc</text>
+                        
+                        <line x1="35" y1="180" x2="275" y2="180" stroke="#1a3a5c" stroke-width="1" stroke-dasharray="3,2"/>
+                        <text x="155" y="165" text-anchor="middle" fill="#1a3a5c" font-size="10">Hplinto</text>
+                        
+                        <!-- Dimensione L palo -->
+                        <line x1="305" y1="180" x2="305" y2="440" stroke="#1a3a5c" stroke-width="1.5"/>
+                        <line x1="300" y1="180" x2="310" y2="180" stroke="#1a3a5c" stroke-width="1.5"/>
+                        <line x1="300" y1="440" x2="310" y2="440" stroke="#1a3a5c" stroke-width="1.5"/>
+                        <text x="315" y="315" fill="#1a3a5c" font-size="11" font-weight="600">L</text>
+                        
+                        <!-- Diametro palo -->
+                        <line x1="50" y1="250" x2="70" y2="250" stroke="#27ae60" stroke-width="1.5"/>
+                        <text x="60" y="243" text-anchor="middle" fill="#27ae60" font-size="9">D</text>
+                        
+                        <!-- Apice stratigrafia -->
+                        <rect x="0" y="160" width="300" height="5" fill="#228b22" stroke="#1a5c1a" stroke-width="1"/>
+                    </g>
+                </svg>
+            </div>
+
+            <h3>Parametri Geometrici Principali</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parametro</th>
+                            <th>Simbolo</th>
+                            <th>Descrizione</th>
+                            <th>Unita</th>
+                            <th>Range Tipico</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Dimensione B</td>
+                            <td><em>B</em></td>
+                            <td>Larghezza del plinto in direzione X</td>
+                            <td>m</td>
+                            <td>2.0 - 20.0</td>
+                        </tr>
+                        <tr>
+                            <td>Dimensione L</td>
+                            <td><em>L</em></td>
+                            <td>Lunghezza del plinto in direzione Y</td>
+                            <td>m</td>
+                            <td>2.0 - 20.0</td>
+                        </tr>
+                        <tr>
+                            <td>Spessore plinto</td>
+                            <td><em>H</em></td>
+                            <td>Altezza della piastra di fondazione</td>
+                            <td>m</td>
+                            <td>0.5 - 3.0</td>
+                        </tr>
+                        <tr>
+                            <td>Numero pali X</td>
+                            <td><em>n<sub>x</sub></em></td>
+                            <td>Quantita di pali in direzione X</td>
+                            <td>-</td>
+                            <td>1 - 15</td>
+                        </tr>
+                        <tr>
+                            <td>Numero pali Y</td>
+                            <td><em>n<sub>y</sub></em></td>
+                            <td>Quantita di pali in direzione Y</td>
+                            <td>-</td>
+                            <td>1 - 15</td>
+                        </tr>
+                        <tr>
+                            <td>Interasse X</td>
+                            <td><em>i<sub>x</sub></em></td>
+                            <td>Distanza tra i centri dei pali in direzione X</td>
+                            <td>m</td>
+                            <td>1.5 - 5.0</td>
+                        </tr>
+                        <tr>
+                            <td>Interasse Y</td>
+                            <td><em>i<sub>y</sub></em></td>
+                            <td>Distanza tra i centri dei pali in direzione Y</td>
+                            <td>m</td>
+                            <td>1.5 - 5.0</td>
+                        </tr>
+                        <tr>
+                            <td>Diametro palo</td>
+                            <td><em>D</em></td>
+                            <td>Diametro della sezione circolare del palo</td>
+                            <td>m</td>
+                            <td>0.4 - 1.5</td>
+                        </tr>
+                        <tr>
+                            <td>Lunghezza palo</td>
+                            <td><em>L<sub>p</sub></em></td>
+                            <td>Profondita di infissione del palo</td>
+                            <td>m</td>
+                            <td>10.0 - 40.0</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- INPUT -->
+        <section id="input">
+            <h2>4. Parametri di Input</h2>
+            <p>L'applicazione richiede l'inserimento di dati organizzati nelle seguenti categorie:</p>
+
+            <h3>4.1 Geometria del Plinto</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parametro</th>
+                            <th>Tipo</th>
+                            <th>Descrizione</th>
+                            <th>Unita</th>
+                            <th>Valore Default</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>B</td><td>float</td><td>Dimensione del plinto in X</td><td>m</td><td>5.0</td></tr>
+                        <tr><td>L</td><td>float</td><td>Dimensione del plinto in Y</td><td>m</td><td>5.0</td></tr>
+                        <tr><td>Spessore Plinto</td><td>float</td><td>Altezza della piastra</td><td>m</td><td>1.0</td></tr>
+                        <tr><td>E cls</td><td>float</td><td>Modulo elastico cls</td><td>MPa</td><td>30000</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>4.2 Geometria dei Pali</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parametro</th>
+                            <th>Tipo</th>
+                            <th>Descrizione</th>
+                            <th>Unita</th>
+                            <th>Valore Default</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>n_x</td><td>int</td><td>Numero pali in direzione X</td><td>-</td><td>3</td></tr>
+                        <tr><td>n_y</td><td>int</td><td>Numero pali in direzione Y</td><td>-</td><td>3</td></tr>
+                        <tr><td>Interasse X</td><td>float</td><td>Distanza centra pali X</td><td>m</td><td>1.8</td></tr>
+                        <tr><td>Interasse Y</td><td>float</td><td>Distanza centra pali Y</td><td>m</td><td>1.8</td></tr>
+                        <tr><td>Diametro D</td><td>float</td><td>Diametro palo</td><td>m</td><td>0.6</td></tr>
+                        <tr><td>Lunghezza L</td><td>float</td><td>Lunghezza palo</td><td>m</td><td>20.0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>4.3 Azioni Applicata al Baricentro</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parametro</th>
+                            <th>Tipo</th>
+                            <th>Descrizione</th>
+                            <th>Unita</th>
+                            <th>Valore Default</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>N</td><td>float</td><td>Sforzo normale verticale positivo verso il basso</td><td>kN</td><td>6000</td></tr>
+                        <tr><td>Mx</td><td>float</td><td>Momento flettente attorno asse X</td><td>kNm</td><td>1500</td></tr>
+                        <tr><td>My</td><td>float</td><td>Momento flettente attorno asse Y</td><td>kNm</td><td>1000</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>4.4 Parametri Geotecnici</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parametro</th>
+                            <th>Tipo</th>
+                            <th>Descrizione</th>
+                            <th>Unita</th>
+                            <th>Valore Default</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Nq</td><td>float</td><td>Coefficiente di capacita portante di punta (terreni drenati)</td><td>-</td><td>25</td></tr>
+                        <tr><td>Nc</td><td>float</td><td>Coefficiente di capacita portante di punta (terreni non drenati)</td><td>-</td><td>9</td></tr>
+                        <tr><td>beta</td><td>float</td><td>Coefficiente di attrito laterale (metodo Beta)</td><td>-</td><td>0.30</td></tr>
+                        <tr><td>alpha</td><td>float</td><td>Coefficiente di aderenza (metodo Alfa)</td><td>-</td><td>0.70</td></tr>
+                        <tr><td>FS</td><td>float</td><td>Fattore di sicurezza globale</td><td>-</td><td>2.5</td></tr>
+                        <tr><td>kh</td><td>float</td><td>Coefficiente sismico orizzontale</td><td>-</td><td>0.15</td></tr>
+                        <tr><td>kv</td><td>float</td><td>Coefficiente sismico verticale</td><td>-</td><td>0.05</td></tr>
+                        <tr><td>Falda</td><td>float</td><td>Profondita della falda dal piano campagna</td><td>m</td><td>2.0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>4.5 Stratigrafia del Terreno</h3>
+            <div class="info-box">
+                <p><strong>Formato CSV:</strong> ogni riga contiene 6 valori separati da virgola o punto e virgola:</p>
+                <p><em>spessore[m], gamma_dry[kN/m3], gamma_sat[kN/m3], phi[deg], cu[kPa], E_ed[kPa]</em></p>
+            </div>
+            <div class="formula-box">
+                <div class="formula-label">Esempio di stratigrafia predefinita</div>
+                <div class="formula">
+                    2.0, 18, 20, 30, 0, 25000<br>
+                    3.0, 19, 21, 34, 0, 40000<br>
+                    5.0, 20, 20, 0, 120, 60000
+                </div>
+            </div>
+            <p>Significato delle colonne:</p>
+            <ul>
+                <li><strong>Spessore:</strong> profondita dello strato [m]</li>
+                <li><strong>gamma_dry:</strong> peso di volume secco [kN/m3]</li>
+                <li><strong>gamma_sat:</strong> peso di volume saturo [kN/m3]</li>
+                <li><strong>phi:</strong> angolo di attrito efficace [gradi] (0 per argille)</li>
+                <li><strong>cu:</strong> coesione non drenata [kPa] (0 per sabbie)</li>
+                <li><strong>E_ed:</strong> modulo edometrico [kPa]</li>
+            </ul>
+        </section>
+
+        <!-- OUTPUT -->
+        <section id="output">
+            <h2>5. Output Calcolati</h2>
+            <p>L'analisi produce i seguenti risultati organizzati in categorie:</p>
+
+            <h3>5.1 Indicatori di Sintesi</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Indicatore</th>
+                            <th>Descrizione</th>
+                            <th>Unita</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Pali Totali</td><td>Numero complessivo di pali: n_x x n_y</td><td>-</td></tr>
+                        <tr><td>Portata Ammissibile</td><td>Q_amm calcolata con effetto gruppo</td><td>kN</td></tr>
+                        <tr><td>Cedimento Stimato</td><td>Cedimento del gruppo palo (metodo zattera)</td><td>mm</td></tr>
+                        <tr><td>Stato Allarmi</td><td>Conteggio delle verifiche non soddisfatte</td><td>-</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>5.2 Risultati Geotecnici</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parametro</th>
+                            <th>Descrizione</th>
+                            <th>Unita</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Qult palo</td><td>Capacita portante ultima del palo singolo</td><td>kN</td></tr>
+                        <tr><td>Qamm palo</td><td>Portata ammissibile del palo singolo</td><td>kN</td></tr>
+                        <tr><td>Qb</td><td>Resistenza di punta</td><td>kN</td></tr>
+                        <tr><td>Qs</td><td>Resistenza laterale totale</td><td>kN</td></tr>
+                        <tr><td>k_v</td><td>Rigidezza assiale del palo (molla geotecnica)</td><td>kN/m</td></tr>
+                        <tr><td>Eta (efficienza)</td><td>Coefficiente di efficienza del gruppo (Converse-Labarre)</td><td>-</td></tr>
+                        <tr><td>Qamm effettiva</td><td>Qamm corretta per effetto gruppo</td><td>kN</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>5.3 Reazioni sui Pali</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parametro</th>
+                            <th>Descrizione</th>
+                            <th>Unita</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>R_statico</td><td>Reazione palo (modello rigido, caso statico)</td><td>kN</td></tr>
+                        <tr><td>R_sismico</td><td>Reazione palo (modello rigido, caso sismico)</td><td>kN</td></tr>
+                        <tr><td>R_FEM</td><td>Reazione palo (modello FEM flessibile)</td><td>kN</td></tr>
+                        <tr><td>Cedimento</td><td>Cedimento elastico del nodo (FEM)</td><td>mm</td></tr>
+                        <tr><td>M_radice</td><td>Momento flettente alla base del graticcio</td><td>kNm</td></tr>
+                        <tr><td>FS</td><td>Fattore di sicurezza del singolo palo</td><td>-</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>5.4 Verifiche Strutturali</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parametro</th>
+                            <th>Descrizione</th>
+                            <th>Unita</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Tx (Trazione X)</td><td>Trazione totale armature inferiori in direzione X (Strut-and-Tie)</td><td>kN</td></tr>
+                        <tr><td>Ty (Trazione Y)</td><td>Trazione totale armature inferiori in direzione Y (Strut-and-Tie)</td><td>kN</td></tr>
+                        <tr><td>d_utile</td><td>Altezza utile della sezione (H - copriferro)</td><td>m</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- NORMATIVA -->
+        <section id="normativa">
+            <h2>6. Riferimenti Normativi</h2>
+            <p>L'applicazione si conforma ai seguenti riferimenti normativi e linee guida:</p>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h4>NTC 2018</h4>
+                    <p>Norme Tecniche per le Costruzioni (D.M. 17/01/2018). Capacita portante dei pali in condizioni statiche e sismiche.</p>
+                    <span class="badge-verde">RIFERIMENTO</span>
+                </div>
+                <div class="card">
+                    <h4>Eurocodice 7 (EN 1997-1)</h4>
+                    <p>Progettazione geotecnica - Regole generali. Coefficienti di sicurezza parziali e approcci di progetto.</p>
+                    <span class="badge-verde">RIFERIMENTO</span>
+                </div>
+                <div class="card">
+                    <h4>Circolare 2019</h4>
+                    <p>Istruzioni per l'applicazione delle NTC 2018. Aspetti geotecnici e verifiche sismiche.</p>
+                    <span class="badge-giallo">APPLICAZIONE</span>
+                </div>
+                <div class="card">
+                    <h4>Eurocodice 8 (EN 1998-5)</h4>
+                    <p>Progettazione antisismica delle strutture. Effetti sismici sulle fondazioni profonde.</p>
+                    <span class="badge-giallo">APPLICAZIONE</span>
+                </div>
+            </div>
+
+            <h3>Coefficienti di Sicurezza</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Stato Limite</th>
+                            <th>FS Minimo Raccomandato</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Statico (SLU)</td><td>FS >= 2.5</td><td>Capacita portante ultima / Carico di esercizio</td></tr>
+                        <tr><td>Sismico (SLV)</td><td>FS >= 1.5</td><td>Verifica pseudo-statica</td></tr>
+                        <tr><td>Esercizio (SLE)</td><td>-</td><td>Cedimento ammissibile &lt; valori tabellari</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- FORMULE -->
+        <section id="formule">
+            <h2>7. Metodologia di Calcolo</h2>
+            
+            <h3>7.1 Tensioni Efficaci</h3>
+            <p>Le tensioni verticali efficaci vengono calcolate considerando il peso proprio del terreno e la presenza di falda:</p>
+            <div class="formula-box">
+                <div class="formula-label">Tensione verticale efficace</div>
+                <div class="formula">
+                    sigma'_v(z) = integral_0^z gamma_eff(z') dz'
+                </div>
+            </div>
+            <p>dove gamma_eff tiene conto della riduzione per falda:</p>
+            <div class="formula-box">
+                <div class="formula-label">Peso di volume efficace</div>
+                <div class="formula">
+                    gamma' = gamma_sat - gamma_w &nbsp;&nbsp; (sotto falda)<br>
+                    gamma' = gamma_dry &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (sopra falda)
+                </div>
+            </div>
+
+            <h3>7.2 Capacita Portante del Palo Singolo</h3>
+            <p>La capacita portante ultima del palo si ottiene dalla somma della resistenza di punta e di quella laterale:</p>
+            <div class="formula-box">
+                <div class="formula-label">Capacita portante ultima (Formula Base)</div>
+                <div class="formula">
+                    Q<sub>ult</sub> = Q<sub>b</sub> + Q<sub>s</sub>
+                </div>
+            </div>
+
+            <p><strong>Resistenza di Punta:</strong></p>
+            <div class="formula-box">
+                <div class="formula-label">Terreni a grana grossa (drenati, phi > 0)</div>
+                <div class="formula">
+                    Q<sub>b</sub> = N<sub>q</sub> * sigma'_v(L) * A<sub>base</sub>
+                </div>
+            </div>
+            <div class="formula-box">
+                <div class="formula-label">Terreni a grana fina (non drenati, cu > 0)</div>
+                <div class="formula">
+                    Q<sub>b</sub> = N<sub>c</sub> * c<sub>u</sub> * A<sub>base</sub>
+                </div>
+            </div>
+
+            <p><strong>Resistenza Laterale:</strong></p>
+            <div class="formula-box">
+                <div class="formula-label">Metodo Beta (terreni attritivi)</div>
+                <div class="formula">
+                    q<sub>s</sub>(z) = beta * sigma'_v(z)
+                </div>
+            </div>
+            <div class="formula-box">
+                <div class="formula-label">Metodo Alfa (terreni coesivi)</div>
+                <div class="formula">
+                    q<sub>s</sub>(z) = alpha * c<sub>u</sub>
+                </div>
+            </div>
+
+            <h3>7.3 Ripartizione dei Carichi (Plinto Rigido)</h3>
+            <p>Assumendo il plinto infinitamente rigido, la distribuzione delle reazioni si ottiene risolvendo il sistema di Navier:</p>
+            <div class="formula-box">
+                <div class="formula-label">Sistema di equazioni (Navier)</div>
+                <div class="formula">
+                    Sum(R_i) = N<br>
+                    Sum(R_i * y_i) = M<sub>x</sub><br>
+                    Sum(R_i * x_i) = M<sub>y</sub>
+                </div>
+            </div>
+            <div class="formula-box">
+                <div class="formula-label">Soluzione matriciale</div>
+                <div class="formula">
+                    R = A * (A<sup>T</sup> * A)<sup>-1</sup> * F
+                </div>
+            </div>
+            <p>dove A e la matrice delle coordinate dei pali, F e il vettore delle azioni.</p>
+
+            <h3>7.4 Azioni Sismiche</h3>
+            <p>Le azioni sismiche vengono calcolate con il metodo pseudo-statico:</p>
+            <div class="formula-box">
+                <div class="formula-label">Azioni modificate per sisma</div>
+                <div class="formula">
+                    N<sub>sisma</sub> = N * (1 - k<sub>v</sub>)<br>
+                    M<sub>x,sisma</sub> = M<sub>x</sub> * (1 + k<sub>h</sub>)<br>
+                    M<sub>y,sisma</sub> = M<sub>y</sub> * (1 + k<sub>h</sub>)
+                </div>
+            </div>
+
+            <h3>7.5 Effetto Gruppo (Converse-Labarre)</h3>
+            <div class="formula-box">
+                <div class="formula-label">Efficienza del gruppo di pali</div>
+                <div class="formula">
+                    theta = arctan(D / s<sub>medio</sub>)<br>
+                    eta = 1 - (theta / 90) * ((n-1)*m + (m-1)*n) / (m*n)
+                </div>
+            </div>
+            <p>dove s_med = (i_x + i_y) / 2, m = n_x, n = n_y.</p>
+
+            <h3>7.6 Cedimento del Gruppo</h3>
+            <p>Il cedimento viene stimato con il metodo della zattera equivalente:</p>
+            <div class="formula-box">
+                <div class="formula-label">Zattera equivalente</div>
+                <div class="formula">
+                    z<sub>eq</sub> = (2/3) * L<sub>palo</sub><br>
+                    B<sub>eq</sub> = (n<sub>x</sub> - 1) * i<sub>x</sub> + D<br>
+                    L<sub>eq</sub> = (n<sub>y</sub> - 1) * i<sub>y</sub> + D
+                </div>
+            </div>
+
+            <h3>7.7 Verifica a Puntoni e Tiranti</h3>
+            <p>Per la verifica strutturale del plinto tozzo:</p>
+            <div class="formula-box">
+                <div class="formula-label">Tirante inferiore (direzione X)</div>
+                <div class="formula">
+                    T<sub>x</sub> = (Sum R_i * |x_i|) / (0.9 * d)
+                </div>
+            </div>
+            <div class="formula-box">
+                <div class="formula-label">Tirante inferiore (direzione Y)</div>
+                <div class="formula">
+                    T<sub>y</sub> = (Sum R_i * |y_i|) / (0.9 * d)
+                </div>
+            </div>
+            <p>dove d = spessore_plinto - copriferro (10 cm).</p>
+        </section>
+
+        <!-- ESEMPIO -->
+        <section id="esempio">
+            <h2>8. Esempio di Utilizzo</h2>
+            <p>Di seguito viene illustrata una sessione di calcolo tipo:</p>
+
+            <h3>8.1 Dati di Input</h3>
+            <div class="info-box">
+                <p><strong>Geometria:</strong> Plinto 5.0 x 5.0 m, spessore 1.0 m, 3x3 pali, interasse 1.8 m</p>
+                <p><strong>Pali:</strong> Diametro 0.6 m, lunghezza 20.0 m</p>
+                <p><strong>Azioni:</strong> N = 6000 kN, Mx = 1500 kNm, My = 1000 kNm</p>
+                <p><strong>Sisma:</strong> kh = 0.15, kv = 0.05</p>
+                <p><strong>Stratigrafia:</strong> Sabbia argillosa (3 strati)</p>
+            </div>
+
+            <h3>8.2 Risultati Ottenuti</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parametro</th>
+                            <th>Statico</th>
+                            <th>Sismico</th>
+                            <th>Unita</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Qult palo</td><td>~4500</td><td>-</td><td>kN</td></tr>
+                        <tr><td>Qamm palo</td><td>~1800</td><td>-</td><td>kN</td></tr>
+                        <tr><td>R max palo (rigido)</td><td>~900</td><td>~1100</td><td>kN</td></tr>
+                        <tr><td>R min palo (rigido)</td><td>~350</td><td>~200</td><td>kN</td></tr>
+                        <tr><td>FS minimo</td><td>2.0</td><td>1.6</td><td>-</td></tr>
+                        <tr><td>Cedimento gruppo</td><td colspan="2">~25-35</td><td>mm</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>8.3 Visualizzazioni Prodotte</h3>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>Modello 3D</h4>
+                    <p>Rappresentazione geometrica del plinto con pali e stratigrafia.</p>
+                </div>
+                <div class="card">
+                    <h4>Heatmap Reazioni</h4>
+                    <p>Mappa colorata delle reazioni sui pali con indicazione dei valori.</p>
+                </div>
+                <div class="card">
+                    <h4>Confronto Statico/Sismico</h4>
+                    <p>Diagramma a barre delle reazioni per entrambe le condizioni.</p>
+                </div>
+                <div class="card">
+                    <h4>Profilo Stratigrafico</h4>
+                    <p>Colonnina con gli strati di terreno e parametri edometrici.</p>
+                </div>
+            </div>
+
+            <h3>8.4 Export dei Dati</h3>
+            <p>L'applicazione permette di esportare:</p>
+            <ul>
+                <li><strong>Tabella CSV:</strong> Tutte le reazioni comparative per ogni palo</li>
+                <li><strong>File JSON:</strong> Configurazione completa degli input per riutilizzo</li>
+            </ul>
+        </section>
+
+        <!-- GLOSSARIO -->
+        <section id="glossario">
+            <h2>9. Glossario Termini Tecnici</h2>
+            <p>Terminologia tecnica italiano-inglese utilizzata nell'applicazione:</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Italiano</th>
+                            <th>English</th>
+                            <th>Descrizione</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Plinto</td><td> pile cap / footing</td><td>Blocco di fondazione che distribuisce i carichi sui pali</td></tr>
+                        <tr><td>Palo</td><td>Pile / Pillar</td><td>Elemento strutturale verticale che trasferisce i carichi in profondita</td></tr>
+                        <tr><td>Capacita portante</td><td>Bearing capacity</td><td>Massimo carico sopportabile dal palo</td></tr>
+                        <tr><td>Resistenza di punta</td><td>Base resistance / Tip resistance</td><td>Componente di portanza alla base del palo</td></tr>
+                        <tr><td>Resistenza laterale</td><td>Shaft friction / Side resistance</td><td>Attrito lungo il fusto del palo</td></tr>
+                        <tr><td>Fattore di sicurezza</td><td>Factor of Safety (FoS)</td><td>Rapporto tra resistenza e sollecitazione</td></tr>
+                        <tr><td>Efficienza gruppo</td><td>Group efficiency</td><td>Riduzione di portanza per interferenza tra pali</td></tr>
+                        <tr><td>Cedimento</td><td>Settlement</td><td>Deformazione verticale del sistema di fondazione</td></tr>
+                        <tr><td>Falda acquifera</td><td>Water table / Phreatic level</td><td>Livello della superficie freatica nel sottosuolo</td></tr>
+                        <tr><td>Stratigrafia</td><td>Stratigraphy</td><td>Descrizione degli strati del terreno in profondita</td></tr>
+                        <tr><td>Modulo edometrico</td><td>Oedometric modulus</td><td>Rigidezza del terreno in prova edometrica</td></tr>
+                        <tr><td>Angolo di attrito</td><td>Angle of internal friction (phi)</td><td>Parametro di resistenza al taglio (terreni drenati)</td></tr>
+                        <tr><td>Coesione</td><td>Cohesion (c)</td><td>Resistenza al taglio in condizioni non drenate</td></tr>
+                        <tr><td>Effetto gruppo</td><td>Group effect / Pile group effect</td><td>Interazione tra pali vicini che modifica la portanza</td></tr>
+                        <tr><td>Puntoni e Tiranti</td><td>Strut-and-Tie</td><td>Modello tirante-puntone per piastre tozze</td></tr>
+                        <tr><td>Graticcio</td><td>Grillage</td><td>Reticolo di travi per modellare piastre</td></tr>
+                        <tr><td>Baricentro</td><td>Centroid</td><td>Punto di applicazione della risultante dei carichi</td></tr>
+                        <tr><td>Coefficiente sismico</td><td>Seismic coefficient (kh, kv)</td><td>Parametri pseudo-statici per analisi sismica</td></tr>
+                        <tr><td>Interasse</td><td>Spacing / Centre-to-centre distance</td><td>Distanza tra i centri di due elementi successivi</td></tr>
+                        <tr><td>Rigidezza assiale</td><td>Axial stiffness</td><td>Rapporto tra carico e spostamento assiale</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="disclaimer">
+            <strong>DISCLAIMER TECNICO</strong><br><br>
+            Questa documentazione descrive uno strumento di calcolo professionale per uso tecnico. I risultati 
+            prodotti dall'applicazione devono essere verificati e validati da un ingegnere geotecnico o strutturale 
+            abilitato. L'autore non assume alcuna responsabilita per l'uso improprio dei dati calcolati o per 
+            eventuali errori derivanti dall'inserimento di parametri non corretti. La progettazione definitiva 
+            deve sempre essere Accompagnata da relazione di calcolo redatta secondo le Norme Tecniche vigenti e 
+            verificata da collaudo statico.
+        </div>
+        <div class="copyright">
+            PlintoPali &copy; 2024-2026 — Documentazione Tecnica v1.0
+        </div>
+    </footer>
+
+</body>
+</html>
