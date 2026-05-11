@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from src import figura_mesh_fem, genera_verifiche_df # Import new functions
 
 
 def plot_comparativo_reazioni_mpl(risultati, tipo_confronto='rigido_vs_fem'):
@@ -149,7 +148,12 @@ def crea_report_word(dati, risultati, tabella_pali_df, verifiche_df: pd.DataFram
     doc.add_paragraph(f"Modulo E Cls: {dati.E_cls_MPa:.0f} MPa")
     doc.add_paragraph(f"Disposizione Pali: {dati.n_x} x {dati.n_y}, interasse X={dati.interasse_x:.2f}m, interasse Y={dati.interasse_y:.2f}m")
     doc.add_paragraph(f"Palo: D={dati.diametro_palo:.2f}m, L={dati.lunghezza_palo:.2f}m")
-    doc.add_paragraph(f"Azioni: N={dati.N:.0f} kN, Mx={dati.Mx:.0f} kNm, My={dati.My:.0f} kNm")
+    
+    azioni_str = f"Azioni: N={dati.N:.0f} kN, Mx={dati.Mx:.0f} kNm, My={dati.My:.0f} kNm"
+    if hasattr(dati, 'Hx') and hasattr(dati, 'Hy'):
+        azioni_str += f", Hx={dati.Hx:.0f} kN, Hy={dati.Hy:.0f} kN"
+    doc.add_paragraph(azioni_str)
+
     doc.add_paragraph(f"Parametri Geotecnici: Nq={dati.Nq:.1f}, Nc={dati.Nc:.1f}, β={dati.beta:.2f}, α={dati.alpha:.2f}, FS={dati.gamma_sicurezza:.2f}")
     doc.add_paragraph(f"Profondità Falda: {dati.falda:.2f} m")
 
@@ -185,6 +189,10 @@ def crea_report_word(dati, risultati, tabella_pali_df, verifiche_df: pd.DataFram
     doc.add_paragraph("Confronto tra modello a plinto rigido e flessibile (FEM) in condizioni statiche.")
     img_buf_1 = plot_comparativo_reazioni_mpl(risultati, 'rigido_vs_fem')
     doc.add_picture(img_buf_1, width=Inches(6.5))
+
+    doc.add_heading('5. Verifiche di Progetto', level=1)
+    doc.add_paragraph("La tabella seguente riassume l'esito delle principali verifiche geotecniche e strutturali.")
+    add_df_to_doc(doc, verifiche_df)
 
     # Si potrebbero aggiungere altri grafici qui (es. statico vs sismico)
 

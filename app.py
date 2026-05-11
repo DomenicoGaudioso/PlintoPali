@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
+import numpy as np
+import plotly.graph_objects as go
 import streamlit as st
 from src import (
     DatiPlintoPali, DEFAULT_STRAT, valida_dati, calcola_plinto_pali,
     tabella_sintesi, tabella_pali_comparativa, genera_warning, export_json,
-    figura_3d_plinto_pali, figura_stratigrafia, figura_mesh_fem, genera_verifiche_df,
+    figura_3d_plinto_pali, figura_stratigrafia, figura_mesh_fem, genera_verifiche_df, parse_stratigrafia,
     figura_geometria, figura_comparativa_rigido_fem
 )
 
@@ -13,7 +15,7 @@ DEFAULTS = {
     'n_x': 3, 'n_y': 3, 'interasse_x': 1.8, 'interasse_y': 1.8,
     'diametro_palo': 0.6, 'lunghezza_palo': 20.0,
     'Nq': 25.0, 'Nc': 9.0, 'beta': 0.30, 'alpha': 0.70, 'gamma_sicurezza': 2.5,
-    'N': 6000.0, 'Mx': 1500.0, 'My': 1000.0, 'kh': 0.15, 'kv': 0.05, 'falda': 2.0,
+    'N': 6000.0, 'Mx': 1500.0, 'My': 1000.0, 'Hx': 0.0, 'Hy': 0.0, 'kh': 0.15, 'kv': 0.05, 'falda': 2.0,
     'stratigrafia_csv': DEFAULT_STRAT,
 }
 
@@ -50,6 +52,8 @@ with st.sidebar:
     N = st.number_input('N [kN]', 0.0, 1e7, float(defaults['N']), 500.0)
     Mx = st.number_input('Mx [kNm]', -1e6, 1e6, float(defaults['Mx']), 100.0)
     My = st.number_input('My [kNm]', -1e6, 1e6, float(defaults['My']), 100.0)
+    Hx = st.number_input('Forza Hx [kN]', -1e6, 1e6, float(defaults.get('Hx', 0.0)), 100.0)
+    Hy = st.number_input('Forza Hy [kN]', -1e6, 1e6, float(defaults.get('Hy', 0.0)), 100.0)
 
     st.header('🌍 Geotecnica')
     Nq = st.number_input('Nq (punta sabbia)', 1.0, 100.0, float(defaults['Nq']))
@@ -84,10 +88,15 @@ with st.sidebar:
 
 # Costruzione istanza
 d = DatiPlintoPali(
-    B, L, spessore_plinto, E_cls_MPa, int(n_x), int(n_y), interasse_x, interasse_y,
-    diametro_palo, lunghezza_palo, Nq, Nc, beta, alpha, gamma_sicurezza, N, Mx, My,
-    0.0, 0.0, falda, stratigrafia_csv
-)
+    B=B, L=L, spessore_plinto=spessore_plinto, E_cls_MPa=E_cls_MPa,
+    n_x=int(n_x), n_y=int(n_y), interasse_x=interasse_x, interasse_y=interasse_y,
+    diametro_palo=diametro_palo, lunghezza_palo=lunghezza_palo,
+    Nq=Nq, Nc=Nc, beta=beta, alpha=alpha, gamma_sicurezza=gamma_sicurezza,
+    N=N, Mx=Mx, My=My, Hx=Hx, Hy=Hy,
+    kh=0.0, kv=0.0, # kh e kv non sono attualmente collegati all'UI
+    falda=falda,
+    stratigrafia_csv=stratigrafia_csv
+) # type: ignore
 
 err = valida_dati(d)
 if err:
@@ -99,7 +108,7 @@ try:
         r = calcola_plinto_pali(d)
     
     verifiche_df = genera_verifiche_df(d, r)
-    warnings_count = len(verifiche_df[verifiche_df['Esito'].isin(["NON VERIFICATO", "ATTENZIONE"])])
+    warnings_count = len(verifiche_df[verifiche_df['Esito'].isin(["NON VERIFICATO", "ATTENZIONE"])]) # type: ignore
     current_input = {k: v for k, v in d.__dict__.items()}
     
     # Intestazione e Avvisi Rapidi
@@ -113,7 +122,7 @@ try:
     # Gestione Tabs
     t1, t2, t3, t4, t5, t6 = st.tabs([
         '🏗️ Vista 3D & Terreno', 
-        '📊 Confronto Reazioni', 
+        '📊 Reazioni Pali', 
         '🛠️ Sollecitazioni Plinto', 
         '📑 Report Tabellare',
         '💾 Salva Dati'
@@ -138,8 +147,47 @@ try:
             
     with t2:
         st.subheader("Analisi delle Reazioni: Plinto Infinitamente Rigido vs Flessibile")
+        st.markdown("Confronto delle reazioni **verticali** sui pali tra il modello a plinto rigido e quello a elementi finiti (flessibile).")
         st.plotly_chart(figura_comparativa_rigido_fem(r), use_container_width=True)
         st.plotly_chart(figura_geometria(d, r), use_container_width=True)
+
+        st.divider()
+        st.subheader("Reazioni Orizzontali sui Pali (Modello Rigido)")
+        if 'Rx' in r.get('statico', {}) and 'Ry' in r.get('statico', {}):
+            fig_h = go.Figure()
+            
+            fig_h.add_trace(go.Scatter(
+                x=r['statico']['x'], y=r['statico']['y'],
+                mode='markers+text',
+                marker_symbol='circle-open', marker_size=20, marker_color='blue',
+                text=[f"P{i+1}" for i in range(len(r['statico']['x']))],
+                textposition="top center", name='Pali'
+            ))
+
+            rx_vals, ry_vals = np.array(r['statico']['Rx']), np.array(r['statico']['Ry'])
+            r_mag = np.sqrt(rx_vals**2 + ry_vals**2)
+            
+            if r_mag.max() > 1e-6:
+                max_interasse = max(d.interasse_x, d.interasse_y) if d.n_x > 1 or d.n_y > 1 else 1.0
+                scale = 0.4 * max_interasse / r_mag.max()
+
+                for i in range(len(rx_vals)):
+                    x_s, y_s = r['statico']['x'][i], r['statico']['y'][i]
+                    x_e, y_e = x_s + rx_vals[i] * scale, y_s + ry_vals[i] * scale
+                    
+                    fig_h.add_annotation(x=x_e, y=y_e, ax=x_s, ay=y_s, xref='x', yref='y', axref='x', ayref='y',
+                                         showarrow=True, arrowhead=2, arrowsize=1.5, arrowwidth=2, arrowcolor='red')
+                    fig_h.add_annotation(x=x_s, y=y_s, text=f"{r_mag[i]:.1f} kN", showarrow=False, yshift=-20)
+
+            fig_h.update_layout(
+                title="Componenti Orizzontali Reazioni Pali (Statico, Rigido)",
+                xaxis_title="X [m]", yaxis_title="Y [m]",
+                yaxis_scaleanchor="x", showlegend=False
+            )
+            st.plotly_chart(fig_h, use_container_width=True)
+        else:
+            st.info("Nessuna reazione orizzontale calcolata (es. Hx=0, Hy=0).")
+
 
     with t3:
         st.header("Verifiche Strutturali della Piastra di Fondazione")
@@ -166,6 +214,15 @@ try:
     with t4:
         st.subheader("Tabelle Dettagliate per Post-Processing")
         df_comp = tabella_pali_comparativa(r)
+        
+        # Aggiunge le reazioni orizzontali al DataFrame se presenti
+        if 'Rx' in r.get('statico', {}) and 'Ry' in r.get('statico', {}):
+            df_comp['Rx_kN (Rigido)'] = [round(val, 2) for val in r['statico']['Rx']]
+            df_comp['Ry_kN (Rigido)'] = [round(val, 2) for val in r['statico']['Ry']]
+        if 'Rx' in r.get('statico_fem', {}) and 'Ry' in r.get('statico_fem', {}):
+            df_comp['Rx_kN (FEM)'] = [round(val, 2) for val in r['statico_fem']['Rx']]
+            df_comp['Ry_kN (FEM)'] = [round(val, 2) for val in r['statico_fem']['Ry']]
+
         st.dataframe(df_comp, use_container_width=True)
         st.download_button(
             'Scarica Tabella (CSV)', 
