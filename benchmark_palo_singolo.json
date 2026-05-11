@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "id": "benchmark_palo_singolo_1",
+    "titolo": "Benchmark Palo Singolo - Carichi Assiali e Laterali",
+    "data_generazione": "2026-05-11"
+  },
+  "input": {
+    "diametro": 0.6,
+    "lunghezza": 15.0,
+    "Nq": 20.0,
+    "Nc": 9.0,
+    "beta": 0.3,
+    "alpha": 0.5,
+    "N": 800.0,
+    "H": 50.0,
+    "E": 30000000.0,
+    "I": 0.00636,
+    "kh": 0.1,
+    "kv": 0.05,
+    "falda": 5.0,
+    "n_elementi": 40,
+    "stratigrafia_csv": "5.0,18,20,30,0,20000\n15.0,19,21,0,80,15000"
+  },
+  "risultati_attesi": {
+    "Qamm_static_kN": 1500.0,
+    "y_max_mm": 10.0,
+    "tolleranza_percentuale": 5.0
+  },
+  "esito_atteso": "VERIFICATO"
+}

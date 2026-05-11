@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "id": "benchmark_muro_sostegno_1",
+    "titolo": "Benchmark Muro di Sostegno - Condizioni Standard",
+    "data_generazione": "2026-05-11"
+  },
+  "input": {
+    "H": 5.0,
+    "q": 10.0,
+    "gamma_cls": 24.0,
+    "B": 3.5,
+    "B_punta": 1.0,
+    "B_tallone": 2.5,
+    "t_base": 0.5,
+    "t_fusto_top": 0.3,
+    "t_fusto_bot": 0.5,
+    "mu_base": 0.55,
+    "q_amm": 250.0,
+    "h_fronte": 0.5,
+    "falda_retro": 99.0,
+    "falda_fronte": 99.0,
+    "kh": 0.15,
+    "kv": 0.05,
+    "delta_muro": 20.0,
+    "include_passivo": true,
+    "stratigrafia_csv": "10.0,18,20,32,0,30000",
+    "ha_tirante": false,
+    "t_quota": 4.0,
+    "t_inclinazione": 15.0,
+    "t_tiro": 150.0,
+    "analizza_pendio": false
+  },
+  "risultati_attesi": {
+    "FS_scorr": 1.5,
+    "FS_rib": 2.0,
+    "FS_portanza": 3.0,
+    "tolleranza_percentuale": 5.0
+  },
+  "esito_atteso": "VERIFICATO"
+}

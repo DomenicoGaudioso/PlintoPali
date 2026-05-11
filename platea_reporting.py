@@ -64,7 +64,7 @@ def plot_risultati_platea_mpl(risultati, z_key, title):
     return buf
 
 
-def crea_report_word_platea(dati, risultati):
+def crea_report_word_platea(dati_stat, dati_sis, risultati_stat, risultati_sis, kh: float, kv: float):
     """Crea un documento Word con i risultati dell'analisi della platea."""
     doc = Document()
     doc.add_heading('Relazione di Calcolo - Platea di Fondazione (FEM)', 0)
@@ -72,48 +72,71 @@ def crea_report_word_platea(dati, risultati):
     doc.add_paragraph(f"Data: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     doc.add_heading('1. Dati di Input', level=1)
-    doc.add_paragraph(f"Dimensioni platea: {dati.B:.2f}m (X) x {dati.L:.2f}m (Y)")
-    doc.add_paragraph(f"Spessore: {dati.spessore:.2f} m")
-    doc.add_paragraph(f"Modulo E calcestruzzo: {dati.E_cls_MPa:.0f} MPa")
-    doc.add_paragraph(f"Modulo di Winkler: {dati.k_winkler_kPa_m:.0f} kPa/m")
-    doc.add_paragraph(f"Dimensione mesh: {dati.mesh_size:.2f} m")
-    if dati.q_distribuito_kPa != 0:
-        doc.add_paragraph(f"Carico distribuito: {dati.q_distribuito_kPa:.2f} kPa")
+    doc.add_paragraph(f"Dimensioni platea: {dati_stat.B:.2f}m (X) x {dati_stat.L:.2f}m (Y)")
+    doc.add_paragraph(f"Spessore: {dati_stat.spessore:.2f} m")
+    doc.add_paragraph(f"Modulo E calcestruzzo: {dati_stat.E_cls_MPa:.0f} MPa")
+    doc.add_paragraph(f"Modulo di Winkler: {dati_stat.k_winkler_kPa_m:.0f} kPa/m")
+    doc.add_paragraph(f"Dimensione mesh: {dati_stat.mesh_size:.2f} m")
+    if dati_stat.q_distribuito_kPa != 0:
+        doc.add_paragraph(f"Carico distribuito (statico): {dati_stat.q_distribuito_kPa:.2f} kPa")
+    
+    doc.add_heading('Coefficienti Sismici', level=2)
+    doc.add_paragraph(f"kh = {kh:.3f}")
+    doc.add_paragraph(f"kv = {kv:.3f}")
 
-    if not dati.pilastri_df.empty:
-        doc.add_heading('Carichi sui Pilastri', level=2)
-        add_df_to_doc(doc, dati.pilastri_df)
+    if not dati_stat.pilastri_df.empty:
+        doc.add_heading('Carichi sui Pilastri (Statici)', level=2)
+        add_df_to_doc(doc, dati_stat.pilastri_df)
 
     doc.add_heading('2. Risultati di Sintesi', level=1)
-    cedimento_max = risultati['cedimenti_mm'].max()
-    cedimento_min = risultati['cedimenti_mm'].min()
-    pressione_max = risultati['pressioni_kPa'].max()
-    mxx_max = risultati['Mxx_kNm_m'].max()
-    myy_max = risultati['Myy_kNm_m'].max()
+    
+    # Sintesi Statica
+    doc.add_heading('Condizione Statica', level=2)
+    cedimento_max_stat = risultati_stat['cedimenti_mm'].max()
+    pressione_max_stat = risultati_stat['pressioni_kPa'].max()
+    mxx_max_stat = risultati_stat['Mxx_kNm_m'].max()
+    myy_max_stat = risultati_stat['Myy_kNm_m'].max()
+    doc.add_paragraph(f"Cedimento massimo: {cedimento_max_stat:.2f} mm")
+    doc.add_paragraph(f"Pressione massima sul terreno: {pressione_max_stat:.1f} kPa")
+    doc.add_paragraph(f"Momento Mxx massimo: {mxx_max_stat:.1f} kNm/m")
+    doc.add_paragraph(f"Momento Myy massimo: {myy_max_stat:.1f} kNm/m")
 
-    doc.add_paragraph(f"Cedimento massimo: {cedimento_max:.2f} mm")
-    doc.add_paragraph(f"Cedimento minimo: {cedimento_min:.2f} mm")
-    doc.add_paragraph(f"Pressione massima sul terreno: {pressione_max:.1f} kPa")
-    doc.add_paragraph(f"Momento Mxx massimo: {mxx_max:.1f} kNm/m")
-    doc.add_paragraph(f"Momento Myy massimo: {myy_max:.1f} kNm/m")
+    # Sintesi Sismica
+    doc.add_heading('Condizione Sismica', level=2)
+    cedimento_max_sis = risultati_sis['cedimenti_mm'].max()
+    pressione_max_sis = risultati_sis['pressioni_kPa'].max()
+    mxx_max_sis = risultati_sis['Mxx_kNm_m'].max()
+    myy_max_sis = risultati_sis['Myy_kNm_m'].max()
+    doc.add_paragraph(f"Cedimento massimo: {cedimento_max_sis:.2f} mm")
+    doc.add_paragraph(f"Pressione massima sul terreno: {pressione_max_sis:.1f} kPa")
+    doc.add_paragraph(f"Momento Mxx massimo: {mxx_max_sis:.1f} kNm/m")
+    doc.add_paragraph(f"Momento Myy massimo: {myy_max_sis:.1f} kNm/m")
 
     doc.add_heading('3. Mappe dei Risultati', level=1)
 
+    # Grafici Statici
+    doc.add_heading('Condizione Statica', level=2)
     doc.add_paragraph("Mappa dei cedimenti:")
-    img_ced = plot_risultati_platea_mpl(risultati, 'cedimenti_mm', 'Cedimenti [mm]')
-    doc.add_picture(img_ced, width=Inches(6.0))
-
+    img_ced_stat = plot_risultati_platea_mpl(risultati_stat, 'cedimenti_mm', 'Cedimenti [mm] - Statico')
+    doc.add_picture(img_ced_stat, width=Inches(6.0))
     doc.add_paragraph("Mappa delle pressioni sul terreno:")
-    img_press = plot_risultati_platea_mpl(risultati, 'pressioni_kPa', 'Pressioni [kPa]')
-    doc.add_picture(img_press, width=Inches(6.0))
-
+    img_press_stat = plot_risultati_platea_mpl(risultati_stat, 'pressioni_kPa', 'Pressioni [kPa] - Statico')
+    doc.add_picture(img_press_stat, width=Inches(6.0))
     doc.add_paragraph("Mappa dei momenti flettenti Mxx:")
-    img_mxx = plot_risultati_platea_mpl(risultati, 'Mxx_kNm_m', 'Momento Mxx [kNm/m]')
-    doc.add_picture(img_mxx, width=Inches(6.0))
+    img_mxx_stat = plot_risultati_platea_mpl(risultati_stat, 'Mxx_kNm_m', 'Momento Mxx [kNm/m] - Statico')
+    doc.add_picture(img_mxx_stat, width=Inches(6.0))
 
-    doc.add_paragraph("Mappa dei momenti flettenti Myy:")
-    img_myy = plot_risultati_platea_mpl(risultati, 'Myy_kNm_m', 'Momento Myy [kNm/m]')
-    doc.add_picture(img_myy, width=Inches(6.0))
+    # Grafici Sismici
+    doc.add_heading('Condizione Sismica', level=2)
+    doc.add_paragraph("Mappa dei cedimenti:")
+    img_ced_sis = plot_risultati_platea_mpl(risultati_sis, 'cedimenti_mm', 'Cedimenti [mm] - Sismico')
+    doc.add_picture(img_ced_sis, width=Inches(6.0))
+    doc.add_paragraph("Mappa delle pressioni sul terreno:")
+    img_press_sis = plot_risultati_platea_mpl(risultati_sis, 'pressioni_kPa', 'Pressioni [kPa] - Sismico')
+    doc.add_picture(img_press_sis, width=Inches(6.0))
+    doc.add_paragraph("Mappa dei momenti flettenti Mxx:")
+    img_mxx_sis = plot_risultati_platea_mpl(risultati_sis, 'Mxx_kNm_m', 'Momento Mxx [kNm/m] - Sismico')
+    doc.add_picture(img_mxx_sis, width=Inches(6.0))
 
     doc_io = io.BytesIO()
     doc.save(doc_io)
