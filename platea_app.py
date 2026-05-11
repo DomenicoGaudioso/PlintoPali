@@ -4,10 +4,13 @@ import pandas as pd
 import streamlit as st
 from platea_src import (
     DatiPlatea,
+    DEFAULT_STRAT_PLATEA,
     valida_dati_platea,
+    parse_stratigrafia_platea,
     calcola_platea_fem,
     figura_geometria_platea,
     figura_risultati_platea,
+    stima_k_winkler_da_stratigrafia,
 )
 
 # Prova a importare le librerie per il reporting
@@ -17,9 +20,130 @@ try:
 except ImportError:
     reporting_enabled = False
 
+PREMIUM_CSS = """
+<style>
+  :root {
+    --ink: #13202b;
+    --muted: #5b6774;
+    --line: rgba(19, 32, 43, 0.12);
+    --paper: #f6f7f8;
+    --panel: #ffffff;
+    --accent: #155e75;
+    --ok: #166534;
+    --warn: #a16207;
+    --bad: #b91c1c;
+  }
+  .stApp {
+    background: linear-gradient(180deg, #f7f8fa 0%, #eef2f5 100%);
+  }
+  .block-container {
+    padding-top: 1.4rem;
+    padding-bottom: 2rem;
+  }
+  .hero-shell {
+    border: 1px solid rgba(255,255,255,.22);
+    background: linear-gradient(135deg, #13202b 0%, #164e63 100%);
+    color: white;
+    padding: 24px 28px;
+    border-radius: 14px;
+    box-shadow: 0 18px 42px rgba(19, 32, 43, .16);
+    margin-bottom: 1rem;
+  }
+  .hero-shell h1 {
+    margin: 0 0 .35rem;
+    font-size: 2.05rem;
+    line-height: 1.05;
+    letter-spacing: 0;
+  }
+  .hero-shell p {
+    margin: 0;
+    max-width: 860px;
+    color: rgba(255,255,255,.82);
+    font-size: 1.02rem;
+  }
+  .hero-badges {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .hero-badge {
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.10);
+    border-radius: 8px;
+    padding: .28rem .72rem;
+    font-size: .78rem;
+  }
+  .section-card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1rem 1.15rem;
+    box-shadow: 0 8px 24px rgba(20, 39, 55, .05);
+    margin-bottom: .85rem;
+    color: var(--ink);
+  }
+  .section-card:empty {
+    display: none;
+  }
+  .section-card h1,
+  .section-card h2,
+  .section-card h3,
+  .section-card p,
+  .section-card li,
+  .section-card span {
+    color: var(--ink);
+  }
+  div[data-testid="stMetric"] {
+    background: #ffffff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: .8rem 1rem;
+    box-shadow: 0 8px 20px rgba(20, 39, 55, .04);
+  }
+  div[data-testid="stMetric"] * {
+    color: var(--ink) !important;
+  }
+  div[data-testid="stMetricLabel"] {
+    color: var(--muted) !important;
+  }
+  div[data-testid="stMetricValue"] {
+    color: var(--ink) !important;
+  }
+  .stTabs [data-baseweb="tab-list"] {
+    gap: .35rem;
+  }
+  .stTabs [data-baseweb="tab"] {
+    background: rgba(255,255,255,.62);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    height: 42px;
+    padding: 0 1rem;
+  }
+  .stTabs [data-baseweb="tab"] p {
+    color: var(--ink);
+  }
+  .stTabs [aria-selected="true"] {
+    background: #155e75;
+    color: white;
+    border-color: transparent;
+  }
+  .stTabs [aria-selected="true"] p {
+    color: white;
+  }
+  .hero-shell h1,
+  .hero-shell p,
+  .hero-badge,
+  .hero-badge * {
+    color: white !important;
+  }
+</style>
+"""
+
 DEFAULTS = {
     'B': 10.0, 'L': 12.0, 'spessore': 0.8, 'E_cls_MPa': 30000.0,
     'k_winkler_kPa_m': 15000.0, 'mesh_size': 1.0, 'q_distribuito_kPa': 0.0,
+    'stratigrafia_csv': DEFAULT_STRAT_PLATEA,
 }
 
 DEFAULT_COLUMNS = pd.DataFrame([
@@ -30,8 +154,20 @@ DEFAULT_COLUMNS = pd.DataFrame([
 ])
 
 st.set_page_config(page_title='PlateaFEM', layout='wide')
-st.title('PlateaFEM - Analisi di Platee di Fondazione')
-st.markdown("Strumento per l'analisi di platee di fondazione su suolo alla Winkler con metodo degli Elementi Finiti (FEM) basato su **OpenSeesPy**.")
+st.markdown(PREMIUM_CSS, unsafe_allow_html=True)
+
+st.markdown(
+    """
+    <section class="hero-shell">
+      <h1>PlateaFEM</h1>
+      <p>Analisi di platee di fondazione su suolo alla Winkler con il Metodo degli Elementi Finiti (FEM), basato su OpenSeesPy.</p>
+      <div class="hero-badges">
+        <span class="hero-badge">FEM (OpenSeesPy)</span>
+        <span class="hero-badge">Shell MITC4</span>
+        <span class="hero-badge">Suolo alla Winkler</span>
+      </div>
+    </section>
+    """, unsafe_allow_html=True)
 
 # Gestione stato e defaults per import/export
 defaults = DEFAULTS.copy()
@@ -48,6 +184,8 @@ with st.sidebar:
             # Gestisce separatamente il DataFrame dei pilastri
             if 'pilastri_df' in loaded_data and isinstance(loaded_data['pilastri_df'], list):
                 pilastri_defaults_df = pd.DataFrame(loaded_data['pilastri_df'])
+            if 'stratigrafia_csv' in loaded_data:
+                defaults['stratigrafia_csv'] = loaded_data['stratigrafia_csv']
             st.success('Dati caricati con successo!')
         except (json.JSONDecodeError, TypeError, ValueError) as e:
             st.error(f'Errore nel caricamento del file JSON: {e}')
@@ -65,7 +203,24 @@ with st.sidebar:
     
     st.header('⚙️ Proprietà Materiali e Terreno')
     E_cls_MPa = st.number_input('Modulo E Cls [MPa]', 10000.0, 60000.0, float(defaults['E_cls_MPa']), 1000.0)
-    k_winkler_kPa_m = st.number_input('Modulo di Winkler ks [kPa/m]', 1000.0, 500000.0, float(defaults['k_winkler_kPa_m']), 1000.0)
+    
+    st.subheader('Stratigrafia')
+    st.caption("Usata per stimare il modulo di Winkler. Righe: spessore,γ_dry,γ_sat,phi,cu,E_ed")
+    stratigrafia_csv = st.text_area("Stratigrafia", value=defaults['stratigrafia_csv'], height=120)
+    strat_df, strat_err = parse_stratigrafia_platea(stratigrafia_csv)
+    
+    k_winkler_mode = st.radio("Definizione Modulo di Winkler", ["Calcola da stratigrafia", "Manuale"], horizontal=True)
+    
+    if k_winkler_mode == "Calcola da stratigrafia":
+        if not strat_err:
+            k_winkler_stimato = stima_k_winkler_da_stratigrafia(strat_df, B, 0.2)
+            st.info(f"Ks stimato: **{k_winkler_stimato:.0f} kPa/m**")
+            k_winkler_kPa_m = k_winkler_stimato
+        else:
+            st.error("Stratigrafia non valida per calcolare Ks.")
+            k_winkler_kPa_m = float(defaults['k_winkler_kPa_m'])
+    else:
+        k_winkler_kPa_m = st.number_input('Modulo di Winkler ks [kPa/m]', 1000.0, 500000.0, float(defaults['k_winkler_kPa_m']), 1000.0)
 
     st.header('FEM')
     mesh_size = st.number_input('Dimensione Mesh [m]', 0.2, 5.0, float(defaults['mesh_size']), 0.1)
@@ -94,7 +249,7 @@ with st.sidebar:
     st.divider()
     current_input_data = {
         'B': B, 'L': L, 'spessore': spessore, 'E_cls_MPa': E_cls_MPa,
-        'k_winkler_kPa_m': k_winkler_kPa_m, 'mesh_size': mesh_size, 'q_distribuito_kPa': q_distribuito_kPa,
+        'k_winkler_kPa_m': k_winkler_kPa_m, 'mesh_size': mesh_size, 'q_distribuito_kPa': q_distribuito_kPa, 'stratigrafia_csv': stratigrafia_csv,
         'pilastri_df': edited_columns_df.to_dict('records')
     }
     st.download_button(
@@ -145,28 +300,37 @@ try:
     tabs = st.tabs(tab_names)
 
     with tabs[0]:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
         st.subheader("Geometria, Mesh FEM e Posizione Carichi")
-        st.plotly_chart(figura_geometria_platea(dati_platea, risultati), use_container_width=True)
+        st.plotly_chart(figura_geometria_platea(dati_platea, risultati), use_container_width=True, config={'displayModeBar': False})
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with tabs[1]:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
         st.subheader("Mappa dei Cedimenti Verticali [mm]")
-        st.plotly_chart(figura_risultati_platea(dati_platea, risultati, 'cedimenti_mm', 'Cedimenti [mm]'), use_container_width=True)
+        st.plotly_chart(figura_risultati_platea(dati_platea, risultati, 'cedimenti_mm', 'Cedimenti [mm]'), use_container_width=True, config={'displayModeBar': False})
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with tabs[2]:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
         st.subheader("Mappe dei Momenti Flettenti [kNm/m]")
         col1, col2 = st.columns(2)
         with col1:
-            st.plotly_chart(figura_risultati_platea(dati_platea, risultati, 'Mxx_kNm_m', 'Momento Mxx [kNm/m]'), use_container_width=True)
+            st.plotly_chart(figura_risultati_platea(dati_platea, risultati, 'Mxx_kNm_m', 'Momento Mxx [kNm/m]'), use_container_width=True, config={'displayModeBar': False})
         with col2:
-            st.plotly_chart(figura_risultati_platea(dati_platea, risultati, 'Myy_kNm_m', 'Momento Myy [kNm/m]'), use_container_width=True)
-        st.plotly_chart(figura_risultati_platea(dati_platea, risultati, 'Mxy_kNm_m', 'Momento Mxy [kNm/m]'), use_container_width=True)
+            st.plotly_chart(figura_risultati_platea(dati_platea, risultati, 'Myy_kNm_m', 'Momento Myy [kNm/m]'), use_container_width=True, config={'displayModeBar': False})
+        st.plotly_chart(figura_risultati_platea(dati_platea, risultati, 'Mxy_kNm_m', 'Momento Mxy [kNm/m]'), use_container_width=True, config={'displayModeBar': False})
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with tabs[3]:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
         st.subheader("Mappa delle Pressioni sul Terreno [kPa]")
-        st.plotly_chart(figura_risultati_platea(dati_platea, risultati, 'pressioni_kPa', 'Pressione sul terreno [kPa]'), use_container_width=True)
+        st.plotly_chart(figura_risultati_platea(dati_platea, risultati, 'pressioni_kPa', 'Pressione sul terreno [kPa]'), use_container_width=True, config={'displayModeBar': False})
+        st.markdown('</div>', unsafe_allow_html=True)
 
     if reporting_enabled:
         with tabs[4]:
+            st.markdown('<div class="section-card">', unsafe_allow_html=True)
             st.subheader("Generazione Relazione Tecnica")
             st.markdown(
                 "Crea un report di calcolo in formato Microsoft Word (.docx) contenente i dati di input, "
@@ -185,6 +349,7 @@ try:
                     except Exception as report_e:
                         st.error(f"Errore durante la generazione del report: {report_e}")
                         st.exception(report_e)
+            st.markdown('</div>', unsafe_allow_html=True)
 
 except Exception as e:
     st.error(f"Errore critico durante l'analisi FEM: {e}")

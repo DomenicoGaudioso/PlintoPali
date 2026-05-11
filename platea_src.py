@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import openseespy.opensees as ops
+from io import StringIO
+
+DEFAULT_STRAT_PLATEA = """2.0,18,20,30,0,25000
+10.0,19,21,34,0,40000"""
 
 @dataclass(frozen=True)
 class DatiPlatea:
@@ -35,6 +39,50 @@ def valida_dati_platea(d: DatiPlatea) -> List[str]:
         if not d.pilastri_df.empty and (d.pilastri_df['x'].max() > d.B or d.pilastri_df['y'].max() > d.L):
             err.append('Posizione pilastro fuori dalla geometria della platea.')
     return err
+
+def parse_stratigrafia_platea(csv_text: str) -> Tuple[pd.DataFrame, List[str]]:
+    """Righe: spessore,gamma_dry,gamma_sat,phi_deg,cu_kPa,E_ed_kPa"""
+    err, rows = [], []
+    lines = [ln.strip() for ln in csv_text.splitlines() if ln.strip()]
+    if not lines: return pd.DataFrame(), ['Inserire almeno uno strato.']
+    for i, line in enumerate(lines, 1):
+        parts = [p.strip() for p in line.replace(';', ',').split(',') if p.strip()]
+        if len(parts) != 6:
+            err.append(f'Riga {i}: usare 6 campi: spessore,gamma_dry,gamma_sat,phi,cu,E_ed.')
+            continue
+        try:
+            rows.append({k: float(v) for k, v in zip(['spessore_m', 'gamma_dry', 'gamma_sat', 'phi_deg', 'cu_kPa', 'E_ed_kPa'], parts)})
+        except ValueError:
+            err.append(f'Riga {i}: valori non numerici.')
+    df = pd.DataFrame(rows)
+    if df.empty: return df, err or ['Stratigrafia non valida.']
+    if (df['spessore_m'] <= 0).any(): err.append('Tutti gli spessori devono essere positivi.')
+    df['z_top_m'] = df['spessore_m'].cumsum() - df['spessore_m']
+    df['z_bot_m'] = df['spessore_m'].cumsum()
+    return df, err
+
+def stima_k_winkler_da_stratigrafia(strat_df: pd.DataFrame, B: float, poisson: float) -> float:
+    """Stima il modulo di Winkler da un profilo stratigrafico (metodo di Vesic)."""
+    if strat_df.empty or B <= 0:
+        return 15000.0 # Valore di default
+
+    # Calcola E medio su una profondità significativa (es. 1.5 * B)
+    prof_influenza = 1.5 * B
+    
+    sum_E_dz = 0.0
+    prof_tot = 0.0
+    for _, r in strat_df.iterrows():
+        z_t = r['z_top_m']
+        z_b = r['z_bot_m']
+        dz_strato = min(z_b, prof_influenza) - z_t
+        if dz_strato > 0:
+            sum_E_dz += r['E_ed_kPa'] * dz_strato
+            prof_tot += dz_strato
+    E_medio = sum_E_dz / prof_tot if prof_tot > 0 else strat_df['E_ed_kPa'].iloc[0]
+    
+    # Formula di Vesic (1961) per platea flessibile
+    k_s = 0.65 * (E_medio / (B * (1 - poisson**2))) * (E_medio * B**4 / (E_medio * (1/12)))**(1/12)
+    return k_s if k_s > 0 else 15000.0
 
 def calcola_platea_fem(d: DatiPlatea) -> Dict:
     """

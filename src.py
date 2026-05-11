@@ -252,13 +252,15 @@ def calcola_strut_and_tie(d: DatiPlintoPali, rig_res: dict) -> dict:
     d_utile = d.spessore_plinto - 0.10
     if d_utile <= 0: d_utile = 0.1
     x, y, R = rig_res['x'], rig_res['y'], rig_res['R']
-    
-    Mx_tie = sum(R[i] * abs(x[i]) for i in range(len(R)) if R[i] > 0)
-    My_tie = sum(R[i] * abs(y[i]) for i in range(len(R)) if R[i] > 0)
-    
-    Tx = Mx_tie / (0.9 * d_utile)
-    Ty = My_tie / (0.9 * d_utile)
-    return {'Tx_kN': Tx, 'Ty_kN': Ty, 'd_utile_m': d_utile}
+
+    # Momento interno attorno all'asse Y (resisto da armatura in direzione X)
+    My_internal = sum(R[i] * abs(x[i]) for i in range(len(R)) if R[i] > 0)
+    # Momento interno attorno all'asse X (resisto da armatura in direzione Y)
+    Mx_internal = sum(R[i] * abs(y[i]) for i in range(len(R)) if R[i] > 0)
+
+    Tx_kN = My_internal / (0.9 * d_utile)  # Armatura in direzione X
+    Ty_kN = Mx_internal / (0.9 * d_utile)  # Armatura in direzione Y
+    return {'Tx_kN': Tx_kN, 'Ty_kN': Ty_kN, 'd_utile_m': d_utile}
 
 def reaction_case_fem(d: DatiPlintoPali, k_v_calcolato: float, seismic=False):
     """Calcolo reazioni e deformazioni tramite OpenSeesPy con check lunghezza nulla."""
