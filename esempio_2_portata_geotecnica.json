@@ -1,0 +1,40 @@
+{
+  "meta": {
+    "id": "esempio_2_portata_geotecnica",
+    "titolo": "Verifica della Capacità Portante Geotecnica del palo singolo",
+    "fonte": "Metodologia basata su 'Pile Design and Construction Practice' (Tomlinson) e 'Pile Foundation Analysis and Design' (Poulos & Davis).",
+    "data_generazione": "2026-05-11",
+    "autore": "CivilBox"
+  },
+  "input": {
+    "B": 5.0,
+    "L": 5.0,
+    "spessore_plinto": 1.0,
+    "E_cls_MPa": 30000.0,
+    "n_x": 1,
+    "n_y": 1,
+    "interasse_x": 1.0,
+    "interasse_y": 1.0,
+    "diametro_palo": 0.8,
+    "lunghezza_palo": 20.0,
+    "Nq": 25.0,
+    "Nc": 9.0,
+    "beta": 0.35,
+    "alpha": 0.6,
+    "gamma_sicurezza": 2.5,
+    "N": 1000.0,
+    "Mx": 0.0,
+    "My": 0.0,
+    "falda": 3.0,
+    "stratigrafia_csv": "5.0,18,20,32,0,10000\n20.0,19,19,0,80,20000"
+  },
+  "risultati_attesi": {
+    "nome_output": "Qult_palo",
+    "valore": 2355.7,
+    "unita": "kN",
+    "tolleranza_percentuale": 1.0,
+    "descrizione": "Capacità portante ultima del palo singolo"
+  },
+  "esito_atteso": "VERIFICATO",
+  "note_test": "Questo test verifica la corretta implementazione del calcolo della capacità portante ultima di un palo singolo in terreno stratificato."
+}

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from typing import Tuple, List, Dict
 import json
 import math
@@ -413,8 +414,9 @@ def tabella_pali_comparativa(r: Dict[str, object]) -> pd.DataFrame:
     })
     return df.sort_values('R_Rigido_Stat [kN]', ascending=False).reset_index(drop=True)
 
-def genera_warning(d: DatiPlintoPali, r: dict) -> List[str]:
-    warnings = []
+def genera_verifiche_df(d: DatiPlintoPali, r: dict) -> pd.DataFrame:
+    verifiche = []
+
     fs_stat_min = float(np.min(r['statico']['FS']))
     fs_sis_min = float(np.min(r['sismico']['FS']))
     r_stat_min = float(np.min(r['statico']['R']))
@@ -422,28 +424,115 @@ def genera_warning(d: DatiPlintoPali, r: dict) -> List[str]:
     r_stat_max = float(np.max(r['statico']['R']))
     r_fem_max = float(np.max(r['statico_fem']['R']))
     qamm_eff = float(r['Qamm_effettiva_palo'])
+    
+    # Verifica FS minimo statico
+    esito_fs_stat = "VERIFICATO" if fs_stat_min >= 1.5 else "NON VERIFICATO" if fs_stat_min < 1.0 else "ATTENZIONE"
+    verifiche.append({
+        'Verifica': 'Fattore di Sicurezza (Statico)',
+        'Valore': f"{fs_stat_min:.2f}",
+        'Limite': "1.50",
+        'D/C': f"{1.0/fs_stat_min:.2f}",
+        'Esito': esito_fs_stat,
+        'Messaggio': f"FS minimo statico: {fs_stat_min:.2f}"
+    })
 
-    if fs_stat_min < 1.5:
-        warnings.append(f"⚠ FS minimo statico basso ({fs_stat_min:.2f} < 1.5)")
-    if fs_sis_min < 1.2:
-        warnings.append(f"⚠ FS minimo sismico molto basso ({fs_sis_min:.2f} < 1.2)")
-    if r_stat_min < 0:
-        warnings.append(f"⚠ Palo in trazione nel caso statico ({r_stat_min:.0f} kN)")
-    if r_sis_min < 0:
-        warnings.append(f"⚠ Palo in trazione nel caso sismico ({r_sis_min:.0f} kN)")
-    if r_stat_max > qamm_eff:
-        warnings.append(f"⚠ Reazione massima rigida ({r_stat_max:.0f} kN) supera Qamm efficace ({qamm_eff:.0f} kN)")
-    if r_fem_max > qamm_eff:
-        warnings.append(f"⚠ Reazione massima FEM ({r_fem_max:.0f} kN) supera Qamm efficace ({qamm_eff:.0f} kN)")
-        
+    # Verifica FS minimo sismico
+    esito_fs_sis = "VERIFICATO" if fs_sis_min >= 1.2 else "NON VERIFICATO" if fs_sis_min < 1.0 else "ATTENZIONE"
+    verifiche.append({
+        'Verifica': 'Fattore di Sicurezza (Sismico)',
+        'Valore': f"{fs_sis_min:.2f}",
+        'Limite': "1.20",
+        'D/C': f"{1.0/fs_sis_min:.2f}",
+        'Esito': esito_fs_sis,
+        'Messaggio': f"FS minimo sismico: {fs_sis_min:.2f}"
+    })
+
+    # Verifica trazione palo statico
+    esito_traz_stat = "VERIFICATO" if r_stat_min >= 0 else "NON VERIFICATO"
+    verifiche.append({
+        'Verifica': 'Trazione Palo (Statico)',
+        'Valore': f"{r_stat_min:.0f} kN",
+        'Limite': "0 kN",
+        'D/C': "-",
+        'Esito': esito_traz_stat,
+        'Messaggio': f"Reazione minima statica: {r_stat_min:.0f} kN"
+    })
+
+    # Verifica trazione palo sismico
+    esito_traz_sis = "VERIFICATO" if r_sis_min >= 0 else "NON VERIFICATO"
+    verifiche.append({
+        'Verifica': 'Trazione Palo (Sismico)',
+        'Valore': f"{r_sis_min:.0f} kN",
+        'Limite': "0 kN",
+        'D/C': "-",
+        'Esito': esito_traz_sis,
+        'Messaggio': f"Reazione minima sismica: {r_sis_min:.0f} kN"
+    })
+
+    # Verifica superamento Qamm (Rigido)
+    esito_qamm_rig = "VERIFICATO" if r_stat_max <= qamm_eff else "NON VERIFICATO"
+    verifiche.append({
+        'Verifica': 'Qamm Superata (Rigido)',
+        'Valore': f"{r_stat_max:.0f} kN",
+        'Limite': f"{qamm_eff:.0f} kN",
+        'D/C': f"{r_stat_max/qamm_eff:.2f}",
+        'Esito': esito_qamm_rig,
+        'Messaggio': f"Reazione max rigida: {r_stat_max:.0f} kN vs Qamm efficace: {qamm_eff:.0f} kN"
+    })
+
+    # Verifica superamento Qamm (FEM)
+    esito_qamm_fem = "VERIFICATO" if r_fem_max <= qamm_eff else "NON VERIFICATO"
+    verifiche.append({
+        'Verifica': 'Qamm Superata (FEM)',
+        'Valore': f"{r_fem_max:.0f} kN",
+        'Limite': f"{qamm_eff:.0f} kN",
+        'D/C': f"{r_fem_max/qamm_eff:.2f}",
+        'Esito': esito_qamm_fem,
+        'Messaggio': f"Reazione max FEM: {r_fem_max:.0f} kN vs Qamm efficace: {qamm_eff:.0f} kN"
+    })
+    
+    # Effetto gruppo
     eff = r['efficienza_gruppo']
     if eff['eta'] < 1.0:
-        warnings.append(f"ℹ Effetto gruppo attivo (s/D={eff['s_su_D']:.1f}): efficienza ridotta a {eff['eta']:.2f}")
+        verifiche.append({
+            'Verifica': 'Effetto Gruppo',
+            'Valore': f"{eff['eta']:.2f}",
+            'Limite': "1.00",
+            'D/C': "-",
+            'Esito': "ATTENZIONE",
+            'Messaggio': f"Effetto gruppo attivo (s/D={eff['s_su_D']:.1f}): efficienza ridotta a {eff['eta']:.2f}"
+        })
+    else:
+        verifiche.append({
+            'Verifica': 'Effetto Gruppo',
+            'Valore': f"{eff['eta']:.2f}",
+            'Limite': "1.00",
+            'D/C': "-",
+            'Esito': "VERIFICATO",
+            'Messaggio': "Nessun effetto gruppo significativo"
+        })
 
+    # Plinto sottile
     if d.spessore_plinto < max(d.interasse_x, d.interasse_y) / 2:
-        warnings.append("⚠ Plinto sottile rispetto all'interasse: l'ipotesi di plinto rigido potrebbe non essere conservativa.")
+        verifiche.append({
+            'Verifica': 'Spessore Plinto',
+            'Valore': f"{d.spessore_plinto:.2f} m",
+            'Limite': f"{max(d.interasse_x, d.interasse_y) / 2:.2f} m",
+            'D/C': "-",
+            'Esito': "ATTENZIONE",
+            'Messaggio': "Plinto sottile rispetto all'interasse: l'ipotesi di plinto rigido potrebbe non essere conservativa."
+        })
+    else:
+        verifiche.append({
+            'Verifica': 'Spessore Plinto',
+            'Valore': f"{d.spessore_plinto:.2f} m",
+            'Limite': f"{max(d.interasse_x, d.interasse_y) / 2:.2f} m",
+            'D/C': "-",
+            'Esito': "VERIFICATO",
+            'Messaggio': "Spessore plinto adeguato."
+        })
 
-    return warnings
+    return pd.DataFrame(verifiche)
 
 def genera_note(d: DatiPlintoPali, r: dict) -> List[str]:
     note = []

@@ -4,7 +4,7 @@ import streamlit as st
 from src import (
     DatiPlintoPali, DEFAULT_STRAT, valida_dati, calcola_plinto_pali,
     tabella_sintesi, tabella_pali_comparativa, genera_warning, export_json,
-    figura_3d_plinto_pali, figura_stratigrafia, figura_mesh_fem, 
+    figura_3d_plinto_pali, figura_stratigrafia, figura_mesh_fem, genera_verifiche_df,
     figura_geometria, figura_comparativa_rigido_fem
 )
 
@@ -60,8 +60,27 @@ with st.sidebar:
     falda = st.number_input('Profondità Falda [m]', 0.0, 100.0, float(defaults['falda']))
     
     st.subheader('Stratigrafia ed Edometrico')
-    st.caption('Colonne: spessore, gd, gsat, phi, cu, E_ed')
-    stratigrafia_csv = st.text_area('Strati CSV', value=defaults['stratigrafia_csv'], height=150)
+    st.caption('Modifica la stratigrafia direttamente nella tabella (copia/incolla da Excel supportato).')
+    
+    # Parse default stratigraphy for the editor
+    initial_strat_df_for_editor, _ = parse_stratigrafia(defaults['stratigrafia_csv'])
+    editable_strat_df_cols = ['spessore_m', 'gamma_dry', 'gamma_sat', 'phi_deg', 'cu_kPa', 'E_ed_kPa']
+    
+    edited_strat_df = st.data_editor(
+        initial_strat_df_for_editor[editable_strat_df_cols],
+        num_rows="dynamic",
+        use_container_width=True,
+        column_config={
+            "spessore_m": st.column_config.NumberColumn("Spessore [m]", format="%.1f"),
+            "gamma_dry": st.column_config.NumberColumn("γ_dry [kN/m³]", format="%.1f"),
+            "gamma_sat": st.column_config.NumberColumn("γ_sat [kN/m³]", format="%.1f"),
+            "phi_deg": st.column_config.NumberColumn("φ [°]", format="%.0f"),
+            "cu_kPa": st.column_config.NumberColumn("cᵤ [kPa]", format="%.0f"),
+            "E_ed_kPa": st.column_config.NumberColumn("E_ed [kPa]", format="%.0f"),
+        },
+        key="strat_editor"
+    )
+    stratigrafia_csv = edited_strat_df.to_csv(header=False, index=False, float_format='%.1f')
 
 # Costruzione istanza
 d = DatiPlintoPali(
@@ -79,21 +98,20 @@ try:
     with st.spinner("Analisi FEM e geotecnica in corso..."):
         r = calcola_plinto_pali(d)
     
-    warnings = genera_warning(d, r)
+    verifiche_df = genera_verifiche_df(d, r)
+    warnings_count = len(verifiche_df[verifiche_df['Esito'].isin(["NON VERIFICATO", "ATTENZIONE"])])
     current_input = {k: v for k, v in d.__dict__.items()}
     
     # Intestazione e Avvisi Rapidi
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Pali Totali", f"{d.n_x * d.n_y}")
     c2.metric("Portata Amm. (Gruppo)", f"{r['Qamm_effettiva_palo']:.0f} kN")
-    c3.metric("Cedimento Stimato", f"{r['cedimento_gruppo_mm']:.2f} mm")
-    c4.metric("Stato Allarmi", f"{len(warnings)} ⚠" if warnings else "OK ✓")
+    c3.metric("Cedimento Stimato", f"{r['cedimento_gruppo_mm']:.2f} mm") # Ensure 2 decimal places
+    c4.metric("Stato Verifiche", f"{warnings_count} ⚠" if warnings_count > 0 else "OK ✓")
 
-    if warnings:
-        for w in warnings: st.warning(w)
             
     # Gestione Tabs
-    t1, t2, t3, t4, t5 = st.tabs([
+    t1, t2, t3, t4, t5, t6 = st.tabs([
         '🏗️ Vista 3D & Terreno', 
         '📊 Confronto Reazioni', 
         '🛠️ Sollecitazioni Plinto', 
@@ -101,13 +119,20 @@ try:
         '💾 Salva Dati'
     ])
     
+    # Importa il modulo di reporting solo se necessario
+    try:
+        from reporting import crea_report_word
+        reporting_enabled = True # type: ignore
+    except ImportError:
+        reporting_enabled = False
+
     with t1:
         st.subheader("Geometria 3D ed Esplorazione Geotecnica")
         col_3d, col_strat = st.columns([2, 1])
         with col_3d:
             st.plotly_chart(figura_3d_plinto_pali(d), use_container_width=True)
         with col_strat:
-            st.plotly_chart(figura_stratigrafia(r), use_container_width=True)
+            st.plotly_chart(figura_stratigrafia(r), use_container_width=True) # Ensure 2 decimal places in plot
             eff = r['efficienza_gruppo']
             st.info(f"**Mod. Assiale Kv:** {r['k_v_calcolato']:.0f} kN/m\n\n**Interazione:** {eff['stato']} ($\eta$ = {eff['eta']:.2f})")
             
@@ -144,10 +169,14 @@ try:
         st.dataframe(df_comp, use_container_width=True)
         st.download_button(
             'Scarica Tabella (CSV)', 
-            df_comp.to_csv(index=False).encode('utf-8'), 
+            df_comp.to_csv(index=False, float_format='%.2f').encode('utf-8'), # Ensure 2 decimal places in CSV
             'plintopali_reazioni.csv', 
             'text/csv'
         )
+    
+    with t4: # New Verifiche tab
+        st.subheader("Verifiche di Progetto")
+        st.dataframe(verifiche_df, use_container_width=True)
 
     with t5:
         st.subheader("Salvataggio Impostazioni")
@@ -157,6 +186,19 @@ try:
             'plintopali_input.json', 
             'application/json'
         )
+        
+        if reporting_enabled:
+            st.divider()
+            st.subheader("Generazione Relazione Tecnica")
+            if st.button("Genera Relazione (.docx)"):
+                with st.spinner("Creazione del documento Word..."):
+                    report_bytes = crea_report_word(d, r, df_comp, verifiche_df)
+                    st.download_button(
+                        label="Scarica Relazione Word",
+                        data=report_bytes,
+                        file_name="Relazione_PlintoPali.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    )
 
 except Exception as e:
     st.error(f"Errore critico durante la risoluzione del modello: {e}")
