@@ -26,6 +26,9 @@ Il calcolo delle reazioni sui singoli pali assume che la piastra di fondazione (
 $$\mathbf{R} = \mathbf{A} (\mathbf{A}^T \mathbf{A})^{-1} \mathbf{F}$$
 Dove $\mathbf{A}$ è la matrice delle coordinate geometriche dei pali, $\mathbf{F}$ è il vettore delle azioni (modificate per includere le componenti pseudo-statiche sismiche $k_h$ e $k_v$) e $\mathbf{R}$ è il vettore delle reazioni verticali sui pali.
 
+### 4. Analisi Strutturale (FEM)
+Per una stima più accurata della ripartizione dei carichi, l'applicazione integra un modello a elementi finiti basato su **OpenSeesPy**. Il plinto è modellato come un graticcio di travi ("beam on elastic foundation"), dove i pali sono rappresentati da molle verticali con rigidezza $k_v$ e le travi collegano i pali al baricentro del sistema. Questo approccio permette di considerare la deformabilità del plinto.
+
 ## ⚙️ Dati di Input e Output Attesi
 
 ### Input
@@ -44,7 +47,7 @@ L'applicazione accetta i seguenti parametri tramite barra laterale:
 * **Visualizzazioni Plotly:** Pianta del plinto con heatmap delle reazioni, diagrammi a bolle per i carichi e grafici a barre comparativi.
 
 ## ✨ Caratteristiche Principali
-
+* **Doppio Motore di Calcolo:** Confronto diretto tra l'ipotesi di plinto rigido (Navier) e plinto flessibile (FEM a graticcio).
 * **Interfaccia Intuitiva:** Sviluppata interamente in Streamlit per un utilizzo immediato tramite browser.
 * **Import/Export:** Salvataggio e ricaricamento degli input in formato JSON.
 * **Analisi Comparativa:** Valutazione simultanea delle combinazioni statiche e pseudo-statiche (sismiche).
@@ -57,12 +60,12 @@ L'applicazione accetta i seguenti parametri tramite barra laterale:
 
 ## 🚀 Installazione
 
-1.  Clona il repository:
+1.  (Opzionale) Clona il repository del progetto:
     ```bash
-    git clone https://github.com/tuouser/plintopali.git
-    cd plintopali
+    # git clone https://github.com/DomenicoGaudioso/CivilBox-Apps.git
+    # cd CivilBox-Apps/PlintoPali
     ```
-2.  Installa le dipendenze:
+2.  Installa le dipendenze richieste:
     ```bash
     pip install -r requirements.txt
     ```

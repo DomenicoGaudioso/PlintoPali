@@ -366,6 +366,13 @@ def calcola_plinto_pali(d: DatiPlintoPali) -> Dict[str, object]:
     tie_forces = calcola_strut_and_tie(d, st_rig)
     ced_gruppo = calcola_cedimento_gruppo(d, d.N)
     
+    # Genera warning e verifiche
+    warnings = genera_warning(d, {
+        'statico': st_rig,
+        'sismico': se_rig,
+        'efficienza_gruppo': eff_gruppo,
+    })
+    
     return {
         'stratigrafia': cap['stratigrafia'],
         'Qult_palo': cap['Qult'],
@@ -380,7 +387,14 @@ def calcola_plinto_pali(d: DatiPlintoPali) -> Dict[str, object]:
         'efficienza_gruppo': eff_gruppo,
         'Qamm_effettiva_palo': Qamm_effettiva,
         'cedimento_gruppo_mm': ced_gruppo,
-        'strut_and_tie': tie_forces
+        'strut_and_tie': tie_forces,
+        'verifiche_df': genera_verifiche_df(d, {
+            'statico': st_rig,
+            'sismico': se_rig,
+            'statico_fem': st_fem,
+            'Qamm_effettiva_palo': Qamm_effettiva,
+        }),
+        'warnings': warnings,
     }
 
 # ==========================================
@@ -419,7 +433,6 @@ def tabella_pali_comparativa(r: Dict[str, object]) -> pd.DataFrame:
 def genera_verifiche_df(d: DatiPlintoPali, r: dict) -> pd.DataFrame:
     verifiche = []
 
-    fs_stat_min = float(np.min(r['statico']['FS']))
     fs_sis_min = float(np.min(r['sismico']['FS']))
     r_stat_min = float(np.min(r['statico']['R']))
     r_sis_min = float(np.min(r['sismico']['R']))
@@ -427,15 +440,15 @@ def genera_verifiche_df(d: DatiPlintoPali, r: dict) -> pd.DataFrame:
     r_fem_max = float(np.max(r['statico_fem']['R']))
     qamm_eff = float(r['Qamm_effettiva_palo'])
     
+    fs_stat_min = float(np.min(r['statico']['FS']))
     # Verifica FS minimo statico
     esito_fs_stat = "VERIFICATO" if fs_stat_min >= 1.5 else "NON VERIFICATO" if fs_stat_min < 1.0 else "ATTENZIONE"
     verifiche.append({
         'Verifica': 'Fattore di Sicurezza (Statico)',
         'Valore': f"{fs_stat_min:.2f}",
         'Limite': "1.50",
-        'D/C': f"{1.0/fs_stat_min:.2f}",
+        'D/C': f"{1.0/fs_stat_min:.2f}", # D/C per FS è 1/FS
         'Esito': esito_fs_stat,
-        'Messaggio': f"FS minimo statico: {fs_stat_min:.2f}"
     })
 
     # Verifica FS minimo sismico
@@ -444,9 +457,8 @@ def genera_verifiche_df(d: DatiPlintoPali, r: dict) -> pd.DataFrame:
         'Verifica': 'Fattore di Sicurezza (Sismico)',
         'Valore': f"{fs_sis_min:.2f}",
         'Limite': "1.20",
-        'D/C': f"{1.0/fs_sis_min:.2f}",
+        'D/C': f"{1.0/fs_sis_min:.2f}", # D/C per FS è 1/FS
         'Esito': esito_fs_sis,
-        'Messaggio': f"FS minimo sismico: {fs_sis_min:.2f}"
     })
 
     # Verifica trazione palo statico
@@ -455,9 +467,8 @@ def genera_verifiche_df(d: DatiPlintoPali, r: dict) -> pd.DataFrame:
         'Verifica': 'Trazione Palo (Statico)',
         'Valore': f"{r_stat_min:.0f} kN",
         'Limite': "0 kN",
-        'D/C': "-",
+        'D/C': "-", # Non applicabile
         'Esito': esito_traz_stat,
-        'Messaggio': f"Reazione minima statica: {r_stat_min:.0f} kN"
     })
 
     # Verifica trazione palo sismico
@@ -466,9 +477,8 @@ def genera_verifiche_df(d: DatiPlintoPali, r: dict) -> pd.DataFrame:
         'Verifica': 'Trazione Palo (Sismico)',
         'Valore': f"{r_sis_min:.0f} kN",
         'Limite': "0 kN",
-        'D/C': "-",
+        'D/C': "-", # Non applicabile
         'Esito': esito_traz_sis,
-        'Messaggio': f"Reazione minima sismica: {r_sis_min:.0f} kN"
     })
 
     # Verifica superamento Qamm (Rigido)
@@ -477,9 +487,8 @@ def genera_verifiche_df(d: DatiPlintoPali, r: dict) -> pd.DataFrame:
         'Verifica': 'Qamm Superata (Rigido)',
         'Valore': f"{r_stat_max:.0f} kN",
         'Limite': f"{qamm_eff:.0f} kN",
-        'D/C': f"{r_stat_max/qamm_eff:.2f}",
+        'D/C': f"{r_stat_max/qamm_eff:.2f}", # D/C per Qamm è Q_max/Q_amm
         'Esito': esito_qamm_rig,
-        'Messaggio': f"Reazione max rigida: {r_stat_max:.0f} kN vs Qamm efficace: {qamm_eff:.0f} kN"
     })
 
     # Verifica superamento Qamm (FEM)
@@ -488,58 +497,49 @@ def genera_verifiche_df(d: DatiPlintoPali, r: dict) -> pd.DataFrame:
         'Verifica': 'Qamm Superata (FEM)',
         'Valore': f"{r_fem_max:.0f} kN",
         'Limite': f"{qamm_eff:.0f} kN",
-        'D/C': f"{r_fem_max/qamm_eff:.2f}",
+        'D/C': f"{r_fem_max/qamm_eff:.2f}", # D/C per Qamm è Q_max/Q_amm
         'Esito': esito_qamm_fem,
-        'Messaggio': f"Reazione max FEM: {r_fem_max:.0f} kN vs Qamm efficace: {qamm_eff:.0f} kN"
     })
     
+    return pd.DataFrame(verifiche)
+
+def genera_warning(d: DatiPlintoPali, r: dict) -> List[str]:
+    """Genera messaggi di avvertimento basati sui risultati del calcolo."""
+    warnings = []
+    
+    fs_stat_min = float(np.min(r['statico']['FS']))
+    fs_sis_min = float(np.min(r['sismico']['FS']))
+    r_stat_min = float(np.min(r['statico']['R']))
+
+    if 1.0 <= fs_stat_min < 1.5:
+        warnings.append(f"⚠ Fattore di Sicurezza Statico minimo ({fs_stat_min:.2f}) è tra 1.0 e 1.5. Verificare con attenzione.")
+    if 1.0 <= fs_sis_min < 1.2:
+        warnings.append(f"⚠ Fattore di Sicurezza Sismico minimo ({fs_sis_min:.2f}) è tra 1.0 e 1.2. Verificare con attenzione.")
+    if r_stat_min < 0:
+        warnings.append(f"⚠ Reazione minima statica ({r_stat_min:.0f} kN) è negativa. Presenza di trazione sui pali.")
+
     # Effetto gruppo
     eff = r['efficienza_gruppo']
     if eff['eta'] < 1.0:
-        verifiche.append({
-            'Verifica': 'Effetto Gruppo',
-            'Valore': f"{eff['eta']:.2f}",
-            'Limite': "1.00",
-            'D/C': "-",
-            'Esito': "ATTENZIONE",
-            'Messaggio': f"Effetto gruppo attivo (s/D={eff['s_su_D']:.1f}): efficienza ridotta a {eff['eta']:.2f}"
-        })
-    else:
-        verifiche.append({
-            'Verifica': 'Effetto Gruppo',
-            'Valore': f"{eff['eta']:.2f}",
-            'Limite': "1.00",
-            'D/C': "-",
-            'Esito': "VERIFICATO",
-            'Messaggio': "Nessun effetto gruppo significativo"
-        })
+        warnings.append(f"⚠ Effetto gruppo attivo (s/D={eff['s_su_D']:.1f}): efficienza ridotta a {eff['eta']:.2f}.")
 
     # Plinto sottile
     if d.spessore_plinto < max(d.interasse_x, d.interasse_y) / 2:
-        verifiche.append({
-            'Verifica': 'Spessore Plinto',
-            'Valore': f"{d.spessore_plinto:.2f} m",
-            'Limite': f"{max(d.interasse_x, d.interasse_y) / 2:.2f} m",
-            'D/C': "-",
-            'Esito': "ATTENZIONE",
-            'Messaggio': "Plinto sottile rispetto all'interasse: l'ipotesi di plinto rigido potrebbe non essere conservativa."
-        })
-    else:
-        verifiche.append({
-            'Verifica': 'Spessore Plinto',
-            'Valore': f"{d.spessore_plinto:.2f} m",
-            'Limite': f"{max(d.interasse_x, d.interasse_y) / 2:.2f} m",
-            'D/C': "-",
-            'Esito': "VERIFICATO",
-            'Messaggio': "Spessore plinto adeguato."
-        })
-
-    return pd.DataFrame(verifiche)
+        warnings.append(f"⚠ Plinto sottile rispetto all'interasse ({d.spessore_plinto:.2f} m vs {max(d.interasse_x, d.interasse_y) / 2:.2f} m): l'ipotesi di plinto rigido potrebbe non essere conservativa.")
+    
+    return warnings
 
 def genera_note(d: DatiPlintoPali, r: dict) -> List[str]:
     note = []
     n_tot = d.n_x * d.n_y
     qb, qs = float(r.get('Qb', 0.0)), float(r.get('Qs', 0.0))
+    
+    # Aggiungi note sull'efficienza di gruppo se non è un warning
+    eff = r['efficienza_gruppo']
+    if eff['eta'] == 1.0:
+        note.append("Nessun effetto gruppo significativo.")
+    if d.spessore_plinto >= max(d.interasse_x, d.interasse_y) / 2:
+        note.append("Spessore plinto adeguato rispetto all'interasse.")
 
     note.append(f"Numero totale pali: {d.n_x}×{d.n_y} = {n_tot}")
     if qs > 0 and qb > 0:
