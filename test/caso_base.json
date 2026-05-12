@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "id": "caso_base_plinto_4_pali_converse_labarre",
+    "titolo": "Plinto rigido su quattro pali con carico eccentrico",
+    "fonte": "Converse-Labarre per efficienza gruppo; Poulos & Davis 1980 per cedimenti di gruppi di pali",
+    "data_generazione": "2026-05-12",
+    "autore": "CivilBox"
+  },
+  "input": {
+    "B": 5.0,
+    "L": 5.0,
+    "spessore_plinto": 1.0,
+    "E_cls_MPa": 30000.0,
+    "n_x": 2,
+    "n_y": 2,
+    "interasse_x": 3.0,
+    "interasse_y": 3.0,
+    "diametro_palo": 0.6,
+    "lunghezza_palo": 12.0,
+    "Nq": 35.0,
+    "Nc": 9.0,
+    "beta": 0.35,
+    "alpha": 0.7,
+    "gamma_sicurezza": 2.5,
+    "N": 1200.0,
+    "Mx": 120.0,
+    "My": 80.0,
+    "kh": 0.06,
+    "kv": 0.0,
+    "falda": 100.0,
+    "stratigrafia_csv": "2.0,18,20,30,0,25000\n3.0,19,21,34,0,40000\n5.0,20,20,0,120,60000\n"
+  },
+  "risultati_attesi": {
+    "Qult_palo": {
+      "valore": 1248.4532125733158,
+      "unita": "kN",
+      "tolleranza_percentuale": 0.5,
+      "nota": "Capacita ultima del palo singolo da contributi punta e laterale."
+    },
+    "Qamm_effettiva_palo": {
+      "valore": 499.3812850293263,
+      "unita": "kN",
+      "tolleranza_percentuale": 0.5,
+      "nota": "Portata ammissibile con coefficiente globale e fattore gruppo."
+    },
+    "Rmax_statico": {
+      "valore": 333.3333333333333,
+      "unita": "kN",
+      "tolleranza_percentuale": 0.5,
+      "nota": "Reazione massima con plinto rigido."
+    },
+    "FS_min_statico": {
+      "valore": 1.498143855087979,
+      "unita": "-",
+      "tolleranza_percentuale": 0.5,
+      "nota": "Fattore di sicurezza minimo sui pali."
+    },
+    "cedimento_gruppo_mm": {
+      "valore": 1.8903591682419665,
+      "unita": "mm",
+      "tolleranza_percentuale": 1.0,
+      "nota": "Cedimento elastico semplificato del gruppo."
+    }
+  },
+  "esito_atteso": "ATTENZIONE",
+  "note_test": "Caso volutamente vicino al limite FS=1.50 per intercettare regressioni su ripartizione e portata."
+}
