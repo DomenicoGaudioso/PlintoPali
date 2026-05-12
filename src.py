@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Tuple, List, Dict
+from typing import Tuple, List, Dict, Optional, Sequence
 import json
 import math
 import numpy as np
@@ -118,6 +118,105 @@ class DatiPlintoPali:
     kv: float
     falda: float
     stratigrafia_csv: str = DEFAULT_STRAT
+    layout_pali: Optional[Sequence[dict]] = None
+
+def normalizza_layout_pali(layout: Optional[Sequence[dict]]) -> List[Dict[str, float]]:
+    """Restituisce coordinate palo pulite; lista vuota significa griglia automatica."""
+    if not layout:
+        return []
+
+    rows: List[Dict[str, float]] = []
+    for item in layout:
+        if item is None:
+            continue
+        try:
+            x = item.get('x', item.get('X'))
+            y = item.get('y', item.get('Y'))
+            if x is None or y is None:
+                continue
+            if pd.isna(x) or pd.isna(y):
+                continue
+            rows.append({'x': float(x), 'y': float(y)})
+        except (AttributeError, TypeError, ValueError):
+            continue
+    return rows
+
+def usa_layout_personalizzato(d: DatiPlintoPali) -> bool:
+    return len(normalizza_layout_pali(d.layout_pali)) > 0
+
+def numero_pali(d: DatiPlintoPali) -> int:
+    return len(coordinate_pali(d)[0])
+
+def _unique_count(values: np.ndarray, tol: float = 1e-6) -> int:
+    if len(values) == 0:
+        return 0
+    rounded = np.round(values / tol) * tol
+    return len(np.unique(rounded))
+
+def caratteristiche_layout_pali(d: DatiPlintoPali) -> Dict[str, float]:
+    x, y = coordinate_pali(d)
+    n = len(x)
+    if n == 0:
+        return {
+            'n_totale': 0,
+            'n_x_equiv': 0,
+            'n_y_equiv': 0,
+            'span_x': 0.0,
+            'span_y': 0.0,
+            'larghezza_gruppo_x': d.diametro_palo,
+            'larghezza_gruppo_y': d.diametro_palo,
+            'interasse_x_equiv': d.interasse_x,
+            'interasse_y_equiv': d.interasse_y,
+            'interasse_medio': (d.interasse_x + d.interasse_y) / 2.0,
+            'custom': usa_layout_personalizzato(d),
+        }
+
+    span_x = float(np.max(x) - np.min(x)) if n > 1 else 0.0
+    span_y = float(np.max(y) - np.min(y)) if n > 1 else 0.0
+    custom = usa_layout_personalizzato(d)
+
+    if custom:
+        n_x_equiv = max(1, _unique_count(x))
+        n_y_equiv = max(1, _unique_count(y))
+        if n_x_equiv * n_y_equiv != n and span_x > 0 and span_y > 0:
+            aspect = max(span_x / span_y, 1e-6)
+            n_x_equiv = max(1, min(n, int(round(math.sqrt(n * aspect)))))
+            n_y_equiv = max(1, int(math.ceil(n / n_x_equiv)))
+        elif span_x > 0 and span_y == 0:
+            n_x_equiv, n_y_equiv = n, 1
+        elif span_y > 0 and span_x == 0:
+            n_x_equiv, n_y_equiv = 1, n
+
+        if n > 1:
+            pts = np.column_stack([x, y])
+            dist = np.sqrt(((pts[:, None, :] - pts[None, :, :]) ** 2).sum(axis=2))
+            dist[dist == 0.0] = np.nan
+            nearest = np.nanmin(dist, axis=1)
+            nearest = nearest[np.isfinite(nearest)]
+            s_medio = float(np.mean(nearest)) if len(nearest) else (d.interasse_x + d.interasse_y) / 2.0
+        else:
+            s_medio = max(d.interasse_x, d.interasse_y)
+
+        s_x = span_x / max(n_x_equiv - 1, 1) if n_x_equiv > 1 else s_medio
+        s_y = span_y / max(n_y_equiv - 1, 1) if n_y_equiv > 1 else s_medio
+    else:
+        n_x_equiv, n_y_equiv = d.n_x, d.n_y
+        s_x, s_y = d.interasse_x, d.interasse_y
+        s_medio = (d.interasse_x + d.interasse_y) / 2.0
+
+    return {
+        'n_totale': n,
+        'n_x_equiv': int(n_x_equiv),
+        'n_y_equiv': int(n_y_equiv),
+        'span_x': span_x,
+        'span_y': span_y,
+        'larghezza_gruppo_x': span_x + d.diametro_palo,
+        'larghezza_gruppo_y': span_y + d.diametro_palo,
+        'interasse_x_equiv': float(max(s_x, 1e-9)),
+        'interasse_y_equiv': float(max(s_y, 1e-9)),
+        'interasse_medio': float(max(s_medio, 1e-9)),
+        'custom': custom,
+    }
 
 def valida_dati(d: DatiPlintoPali) -> List[str]:
     err = []
@@ -135,11 +234,32 @@ def valida_dati(d: DatiPlintoPali) -> List[str]:
         err.append('Le dimensioni del palo devono essere positive.')
     if d.gamma_sicurezza <= 1.0:
         err.append('La sicurezza del palo deve essere > 1.')
+    layout = normalizza_layout_pali(d.layout_pali)
+    if d.layout_pali and not layout:
+        err.append('Il layout pali personalizzato deve contenere almeno una riga valida con x e y numerici.')
+    if layout:
+        seen = set()
+        for i, row in enumerate(layout, start=1):
+            key = (round(row['x'], 6), round(row['y'], 6))
+            if key in seen:
+                err.append(f'Layout pali: coordinate duplicate alla riga {i}.')
+                break
+            seen.add(key)
+            if abs(row['x']) + d.diametro_palo / 2 > d.B / 2 + 1e-9:
+                err.append(f'Layout pali: il palo {i} esce dal plinto in direzione X.')
+            if abs(row['y']) + d.diametro_palo / 2 > d.L / 2 + 1e-9:
+                err.append(f'Layout pali: il palo {i} esce dal plinto in direzione Y.')
     _, e2 = parse_stratigrafia(d.stratigrafia_csv)
     err.extend(e2)
     return err
 
 def coordinate_pali(d: DatiPlintoPali):
+    layout = normalizza_layout_pali(d.layout_pali)
+    if layout:
+        return (
+            np.array([p['x'] for p in layout], dtype=float),
+            np.array([p['y'] for p in layout], dtype=float),
+        )
     xs = np.linspace(-(d.n_x - 1) * d.interasse_x / 2, (d.n_x - 1) * d.interasse_x / 2, d.n_x)
     ys = np.linspace(-(d.n_y - 1) * d.interasse_y / 2, (d.n_y - 1) * d.interasse_y / 2, d.n_y)
     X, Y = np.meshgrid(xs, ys)
@@ -170,18 +290,22 @@ def stima_kv_palo(d: DatiPlintoPali, df: pd.DataFrame) -> float:
 
 def efficienza_gruppo_converse_labarre(d: DatiPlintoPali) -> dict:
     """Valuta l'effetto gruppo secondo Converse-Labarre."""
-    s_medio = (d.interasse_x + d.interasse_y) / 2.0
+    geom = caratteristiche_layout_pali(d)
+    s_medio = geom['interasse_medio']
     rapporto_s_D = s_medio / d.diametro_palo
     
-    if rapporto_s_D > 4.0 or (d.n_x == 1 and d.n_y == 1):
-        return {'eta': 1.0, 'stato': 'Pali Singoli', 's_su_D': rapporto_s_D}
+    if rapporto_s_D > 4.0 or geom['n_totale'] == 1:
+        stato = 'Layout Personalizzato - Pali Singoli' if geom['custom'] else 'Pali Singoli'
+        return {'eta': 1.0, 'stato': stato, 's_su_D': rapporto_s_D}
         
     theta = math.degrees(math.atan(d.diametro_palo / s_medio))
-    m, n = d.n_x, d.n_y
+    m, n = max(1, int(geom['n_x_equiv'])), max(1, int(geom['n_y_equiv']))
     eta = 1.0 - (theta / 90.0) * (((n - 1) * m + (m - 1) * n) / (m * n))
     eta = max(0.1, min(1.0, eta))
     
     stato = "Comportamento a Gruppo" if rapporto_s_D <= 3.0 else "Interferenza Parziale"
+    if geom['custom']:
+        stato = f"Layout Personalizzato - {stato}"
     return {'eta': eta, 'stato': stato, 's_su_D': rapporto_s_D}
 
 def capacita_singolo_palo(d: DatiPlintoPali) -> Dict[str, float]:
@@ -213,8 +337,9 @@ def calcola_cedimento_gruppo(d: DatiPlintoPali, Q_tot: float) -> float:
     """Metodo della Zattera Equivalente a 2/3 L."""
     df, _ = parse_stratigrafia(d.stratigrafia_csv)
     z_eq = (2.0 / 3.0) * d.lunghezza_palo
-    B_eq = (d.n_x - 1) * d.interasse_x + d.diametro_palo
-    L_eq = (d.n_y - 1) * d.interasse_y + d.diametro_palo
+    geom = caratteristiche_layout_pali(d)
+    B_eq = max(geom['larghezza_gruppo_x'], d.diametro_palo)
+    L_eq = max(geom['larghezza_gruppo_y'], d.diametro_palo)
     cedimento_m = 0.0
     
     for _, r in df.iterrows():
@@ -243,8 +368,8 @@ def reaction_case_rigid(d: DatiPlintoPali, seismic=False):
     Mx = d.Mx * (1.0 + (d.kh if seismic else 0.0))
     My = d.My * (1.0 + (d.kh if seismic else 0.0))
     
-    abc = np.linalg.solve(A.T @ A, np.array([N, Mx, My]))
-    R = A @ abc
+    equilibrio = np.array([N, Mx, My], dtype=float)
+    R, *_ = np.linalg.lstsq(A.T, equilibrio, rcond=None)
     return {'x': x, 'y': y, 'R': R}
 
 def calcola_strut_and_tie(d: DatiPlintoPali, rig_res: dict) -> dict:
@@ -268,11 +393,13 @@ def reaction_case_fem(d: DatiPlintoPali, k_v_calcolato: float, seismic=False):
     ops.model('basic', '-ndm', 3, '-ndf', 6)
     x, y = coordinate_pali(d)
     n = len(x)
+    geom = caratteristiche_layout_pali(d)
     
     E_c = d.E_cls_MPa * 1e3
     G_c = E_c / (2 * (1 + 0.2))
-    A_beam = d.interasse_x * d.spessore_plinto 
-    I_beam = (d.interasse_x * d.spessore_plinto**3) / 12.0
+    larghezza_trave = max(geom['interasse_medio'], d.diametro_palo)
+    A_beam = larghezza_trave * d.spessore_plinto
+    I_beam = (larghezza_trave * d.spessore_plinto**3) / 12.0
     J_tors = I_beam * 2 
     
     ops.geomTransf('Linear', 1, 0, 0, 1)
@@ -374,6 +501,7 @@ def calcola_plinto_pali(d: DatiPlintoPali) -> Dict[str, object]:
     })
     
     return {
+        'layout_pali': caratteristiche_layout_pali(d),
         'stratigrafia': cap['stratigrafia'],
         'Qult_palo': cap['Qult'],
         'Qamm_palo': cap['Qamm'],
@@ -506,6 +634,7 @@ def genera_verifiche_df(d: DatiPlintoPali, r: dict) -> pd.DataFrame:
 def genera_warning(d: DatiPlintoPali, r: dict) -> List[str]:
     """Genera messaggi di avvertimento basati sui risultati del calcolo."""
     warnings = []
+    geom = caratteristiche_layout_pali(d)
     
     fs_stat_min = float(np.min(r['statico']['FS']))
     fs_sis_min = float(np.min(r['sismico']['FS']))
@@ -524,24 +653,30 @@ def genera_warning(d: DatiPlintoPali, r: dict) -> List[str]:
         warnings.append(f"⚠ Effetto gruppo attivo (s/D={eff['s_su_D']:.1f}): efficienza ridotta a {eff['eta']:.2f}.")
 
     # Plinto sottile
-    if d.spessore_plinto < max(d.interasse_x, d.interasse_y) / 2:
-        warnings.append(f"⚠ Plinto sottile rispetto all'interasse ({d.spessore_plinto:.2f} m vs {max(d.interasse_x, d.interasse_y) / 2:.2f} m): l'ipotesi di plinto rigido potrebbe non essere conservativa.")
+    interasse_rif = max(geom['interasse_x_equiv'], geom['interasse_y_equiv'])
+    if d.spessore_plinto < interasse_rif / 2:
+        warnings.append(f"⚠ Plinto sottile rispetto all'interasse ({d.spessore_plinto:.2f} m vs {interasse_rif / 2:.2f} m): l'ipotesi di plinto rigido potrebbe non essere conservativa.")
     
     return warnings
 
 def genera_note(d: DatiPlintoPali, r: dict) -> List[str]:
     note = []
-    n_tot = d.n_x * d.n_y
+    geom = r.get('layout_pali') or caratteristiche_layout_pali(d)
+    n_tot = int(geom['n_totale'])
     qb, qs = float(r.get('Qb', 0.0)), float(r.get('Qs', 0.0))
     
     # Aggiungi note sull'efficienza di gruppo se non è un warning
     eff = r['efficienza_gruppo']
     if eff['eta'] == 1.0:
         note.append("Nessun effetto gruppo significativo.")
-    if d.spessore_plinto >= max(d.interasse_x, d.interasse_y) / 2:
+    interasse_rif = max(geom['interasse_x_equiv'], geom['interasse_y_equiv'])
+    if d.spessore_plinto >= interasse_rif / 2:
         note.append("Spessore plinto adeguato rispetto all'interasse.")
 
-    note.append(f"Numero totale pali: {d.n_x}×{d.n_y} = {n_tot}")
+    if geom.get('custom'):
+        note.append(f"Numero totale pali: {n_tot} da layout personalizzato")
+    else:
+        note.append(f"Numero totale pali: {d.n_x}×{d.n_y} = {n_tot}")
     if qs > 0 and qb > 0:
         if qb > qs:
             note.append("La portata di punta governa sulla portata laterale")

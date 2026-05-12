@@ -21,6 +21,8 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
+from src import genera_verifiche_df, tabella_pali_comparativa, tabella_sintesi
+
 
 def _fig_to_png_bytes(fig) -> bytes:
     """Converte una figura Matplotlib in bytes PNG."""
@@ -42,7 +44,7 @@ def _plot_geometria_matplotlib(d: Any, r: Dict[str, Any]) -> bytes:
     xs_plinto = [-d.B / 2, d.B / 2, d.B / 2, -d.B / 2, -d.B / 2]
     ys_plinto = [-d.L / 2, -d.L / 2, d.L / 2, d.L / 2, -d.L / 2]
     ax.plot(xs_plinto, ys_plinto, color='steelblue', linewidth=2, label='Plinto')
-    ax.fill(xs_plinto, ys_plinto, color='rgba(173, 216, 230, 0.3)', alpha=0.3)
+    ax.fill(xs_plinto, ys_plinto, color='lightblue', alpha=0.3)
 
     # Pali
     R_max_abs = np.max(np.abs(R_vals))
@@ -51,7 +53,7 @@ def _plot_geometria_matplotlib(d: Any, r: Dict[str, Any]) -> bytes:
     for i in range(len(x_pali)):
         # Disegna il palo come un cerchio
         circle = plt.Circle((x_pali[i], y_pali[i]), d.diametro_palo / 2,
-                            color='gray', alpha=0.7, edgecolor='black', linewidth=0.8)
+                            facecolor='gray', alpha=0.7, edgecolor='black', linewidth=0.8)
         ax.add_patch(circle)
 
         # Colore basato sulla reazione (rosso per compressione, blu per trazione)
@@ -227,7 +229,7 @@ def create_word_report(d: Any, r: Dict[str, Any]) -> bytes:
     doc.add_paragraph()
 
     _aggiungi_heading2(doc, "1.2 Sintesi esecutiva")
-    sintesi_df = r['tabella_sintesi']
+    sintesi_df = r.get('tabella_sintesi', tabella_sintesi(r))
     if not sintesi_df.empty:
         table = doc.add_table(rows=1, cols=len(sintesi_df.columns))
         table.style = 'Table Grid'
@@ -254,15 +256,29 @@ def create_word_report(d: Any, r: Dict[str, Any]) -> bytes:
     table.rows[0].cells[1].text = "Valore"
     _intestazione_tabella(table)
     
+    layout_info = r.get('layout_pali', {})
+    if layout_info.get('custom'):
+        layout_rows = [
+            ("Layout pali", "Personalizzato"),
+            ("Numero pali", f"{int(layout_info.get('n_totale', len(r['statico']['x'])))}"),
+            ("Ingombro gruppo X", f"{float(layout_info.get('larghezza_gruppo_x', 0.0)):.2f} m"),
+            ("Ingombro gruppo Y", f"{float(layout_info.get('larghezza_gruppo_y', 0.0)):.2f} m"),
+        ]
+    else:
+        layout_rows = [
+            ("Layout pali", "Griglia"),
+            ("Numero pali X", f"{d.n_x}"),
+            ("Numero pali Y", f"{d.n_y}"),
+            ("Interasse pali X", f"{d.interasse_x:.2f} m"),
+            ("Interasse pali Y", f"{d.interasse_y:.2f} m"),
+        ]
+
     input_params = [
         ("Larghezza Plinto B", f"{d.B:.2f} m"),
         ("Lunghezza Plinto L", f"{d.L:.2f} m"),
         ("Spessore Plinto", f"{d.spessore_plinto:.2f} m"),
         ("Modulo E calcestruzzo", f"{d.E_cls_MPa:.0f} MPa"),
-        ("Numero pali X", f"{d.n_x}"),
-        ("Numero pali Y", f"{d.n_y}"),
-        ("Interasse pali X", f"{d.interasse_x:.2f} m"),
-        ("Interasse pali Y", f"{d.interasse_y:.2f} m"),
+        *layout_rows,
         ("Diametro Palo", f"{d.diametro_palo:.2f} m"),
         ("Lunghezza Palo", f"{d.lunghezza_palo:.2f} m"),
         ("Falda", f"{d.falda:.2f} m"),
@@ -334,7 +350,7 @@ def create_word_report(d: Any, r: Dict[str, Any]) -> bytes:
         row[1].text = value
 
     _aggiungi_heading2(doc, "1.4.2 Reazioni sui Pali (Confronto Statico/Sismico, Rigido/FEM)")
-    comparativa_df = r['tabella_pali_comparativa']
+    comparativa_df = r.get('tabella_pali_comparativa', tabella_pali_comparativa(r))
     if not comparativa_df.empty:
         table = doc.add_table(rows=1, cols=len(comparativa_df.columns))
         table.style = 'Table Grid'
@@ -349,7 +365,7 @@ def create_word_report(d: Any, r: Dict[str, Any]) -> bytes:
     _aggiungi_immagine(doc, "Figura 3 - Confronto Reazioni sui Pali", _plot_comparativa_matplotlib(r))
 
     _aggiungi_heading2(doc, "1.4.3 Verifiche di Progetto")
-    verifiche_df = r['verifiche_df']
+    verifiche_df = r.get('verifiche_df', genera_verifiche_df(d, r))
     if not verifiche_df.empty:
         table = doc.add_table(rows=1, cols=len(verifiche_df.columns))
         table.style = 'Table Grid'

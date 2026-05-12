@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import asdict
 import json
 
+import pandas as pd
 import streamlit as st
 
 from report import create_word_report
@@ -50,7 +51,18 @@ DEFAULTS = {
     "kv": 0.0,
     "falda": 100.0,
     "stratigrafia_csv": DEFAULT_STRAT,
+    "layout_pali": None,
 }
+
+
+def _grid_layout_rows(n_x: int, n_y: int, interasse_x: float, interasse_y: float) -> list[dict[str, float]]:
+    rows = []
+    x0 = -(n_x - 1) * interasse_x / 2.0
+    y0 = -(n_y - 1) * interasse_y / 2.0
+    for iy in range(n_y):
+        for ix in range(n_x):
+            rows.append({"x": x0 + ix * interasse_x, "y": y0 + iy * interasse_y})
+    return rows
 
 
 def _load_defaults(uploaded) -> dict:
@@ -93,6 +105,30 @@ with st.sidebar:
     interasse_y = st.number_input("Interasse Y [m]", 0.5, 20.0, float(defaults["interasse_y"]), 0.1)
     diametro_palo = st.number_input("Diametro palo [m]", 0.2, 3.0, float(defaults["diametro_palo"]), 0.05)
     lunghezza_palo = st.number_input("Lunghezza palo [m]", 1.0, 80.0, float(defaults["lunghezza_palo"]), 0.5)
+    layout_importato = defaults.get("layout_pali") or []
+    usa_layout_custom = st.checkbox("Usa layout tabellare/irregolare", value=bool(layout_importato))
+    if usa_layout_custom:
+        layout_base = layout_importato or _grid_layout_rows(int(n_x), int(n_y), float(interasse_x), float(interasse_y))
+        layout_df = pd.DataFrame(layout_base)
+        if layout_df.empty:
+            layout_df = pd.DataFrame(columns=["x", "y"])
+        layout_df = layout_df.reindex(columns=["x", "y"])
+        layout_editato = st.data_editor(
+            layout_df,
+            num_rows="dynamic",
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "x": st.column_config.NumberColumn("x [m]", step=0.05, format="%.3f"),
+                "y": st.column_config.NumberColumn("y [m]", step=0.05, format="%.3f"),
+            },
+        )
+        layout_pali = [
+            {"x": float(row["x"]), "y": float(row["y"])}
+            for _, row in layout_editato.dropna(subset=["x", "y"]).iterrows()
+        ]
+    else:
+        layout_pali = None
 
     st.header("Capacita geotecnica")
     Nq = st.number_input("Nq [-]", 1.0, 100.0, float(defaults["Nq"]), 1.0)
@@ -139,6 +175,7 @@ dati = DatiPlintoPali(
     kv=kv,
     falda=falda,
     stratigrafia_csv=stratigrafia_csv,
+    layout_pali=layout_pali,
 )
 
 errors = valida_dati(dati)
@@ -171,7 +208,7 @@ with st.sidebar:
         st.warning(f"Relazione Word non disponibile: {exc}")
 
 cols = st.columns(4)
-cols[0].metric("Pali totali", f"{int(dati.n_x * dati.n_y)}")
+cols[0].metric("Pali totali", f"{len(risultati['statico']['x'])}")
 cols[1].metric("Q amm palo", f"{risultati['Qamm_effettiva_palo']:.2f} kN")
 cols[2].metric("FS minimo rigido", f"{float(risultati['statico']['FS'].min()):.2f}")
 cols[3].metric("Cedimento gruppo", f"{risultati['cedimento_gruppo_mm']:.2f} mm")

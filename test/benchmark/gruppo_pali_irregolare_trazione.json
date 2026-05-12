@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "id": "gruppo_pali_irregolare_trazione",
+    "titolo": "Gruppo pali irregolare con palo in trazione",
+    "fonte": "Benchmark interno CivilBox per layout pali tabellare/irregolare",
+    "data_generazione": "2026-05-12",
+    "autore": "CivilBox"
+  },
+  "input": {
+    "B": 5.0,
+    "L": 5.0,
+    "spessore_plinto": 1.0,
+    "E_cls_MPa": 30000.0,
+    "n_x": 2,
+    "n_y": 2,
+    "interasse_x": 3.0,
+    "interasse_y": 3.0,
+    "diametro_palo": 0.6,
+    "lunghezza_palo": 12.0,
+    "Nq": 35.0,
+    "Nc": 9.0,
+    "beta": 0.35,
+    "alpha": 0.7,
+    "gamma_sicurezza": 2.5,
+    "N": 900.0,
+    "Mx": 1450.0,
+    "My": 100.0,
+    "kh": 0.06,
+    "kv": 0.0,
+    "falda": 100.0,
+    "stratigrafia_csv": "2.0,18,20,30,0,25000\n3.0,19,21,34,0,40000\n5.0,20,20,0,120,60000\n",
+    "layout_pali": [
+      {"x": -1.8, "y": -1.2},
+      {"x": 1.7, "y": -1.0},
+      {"x": -1.4, "y": 1.25},
+      {"x": 1.35, "y": 1.1},
+      {"x": 0.15, "y": 0.05}
+    ]
+  },
+  "risultati_attesi": {
+    "Qult_palo": {
+      "valore": 1248.4532125733158,
+      "unita": "kN",
+      "tolleranza_percentuale": 0.5,
+      "nota": "Capacita ultima del palo singolo."
+    },
+    "Qamm_effettiva_palo": {
+      "valore": 384.0817577660619,
+      "unita": "kN",
+      "tolleranza_percentuale": 0.5,
+      "nota": "Portata ammissibile ridotta da efficienza gruppo su layout irregolare."
+    },
+    "Rmin_statico": {
+      "valore": -164.67388096240342,
+      "unita": "kN",
+      "tolleranza_percentuale": 0.5,
+      "nota": "Reazione minima negativa: palo in trazione."
+    },
+    "Rmax_statico": {
+      "valore": 502.0236391906441,
+      "unita": "kN",
+      "tolleranza_percentuale": 0.5,
+      "nota": "Reazione massima con ripartizione rigida sul layout personalizzato."
+    },
+    "FS_min_statico": {
+      "valore": 0.994736594146089,
+      "unita": "-",
+      "tolleranza_percentuale": 0.5,
+      "nota": "Fattore di sicurezza minimo sui pali."
+    },
+    "cedimento_gruppo_mm": {
+      "valore": 1.4524328249818446,
+      "unita": "mm",
+      "tolleranza_percentuale": 1.0,
+      "nota": "Cedimento elastico semplificato con ingombro del gruppo personalizzato."
+    },
+    "eta_gruppo": {
+      "valore": 0.7691152417606251,
+      "unita": "-",
+      "tolleranza_percentuale": 0.5,
+      "nota": "Efficienza equivalente Converse-Labarre da distanze del layout."
+    }
+  },
+  "esito_atteso": "NON VERIFICATO",
+  "note_test": "Caso regressivo per layout pali non a griglia: cinque pali irregolari, momento elevato e trazione nel palo meno caricato."
+}

@@ -49,6 +49,7 @@ L'applicazione accetta i seguenti parametri tramite barra laterale:
 ## ✨ Caratteristiche Principali
 * **Doppio Motore di Calcolo:** Confronto diretto tra l'ipotesi di plinto rigido (Navier) e plinto flessibile (FEM a graticcio).
 * **Interfaccia Intuitiva:** Sviluppata interamente in Streamlit per un utilizzo immediato tramite browser.
+* **Layout pali tabellare:** Supporto a coordinate `x,y` irregolari tramite tabella editabile e JSON, mantenendo la griglia `n_x`/`n_y` esistente.
 * **Import/Export:** Salvataggio e ricaricamento degli input in formato JSON.
 * **Analisi Comparativa:** Valutazione simultanea delle combinazioni statiche e pseudo-statiche (sismiche).
 * **Grafica Avanzata:** Utilizzo di `plotly.graph_objects` per rendering di geometrie e distribuzioni di carico.
