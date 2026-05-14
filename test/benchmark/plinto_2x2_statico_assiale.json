@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "id": "plinto_2x2_statico_assiale",
+    "titolo": "Benchmark Plinto 2x2 - Carico statico assiale",
+    "software_ispirazione": "Calcolo manuale (plinto rigido)",
+    "scopo": "Validare la capacità portante del palo singolo e la ripartizione su un gruppo simmetrico.",
+    "riferimenti_benchmark": [
+      "Formula di Navier per plinti rigidi: R_i = N/n",
+      "NTC 2018 Capitolo 6.4.3 - Fondazioni su pali"
+    ],
+    "data_generazione": "2026-05-14",
+    "autore": "Gemini Code Assist"
+  },
+  "input": {
+    "plinto_B": 3.0,
+    "plinto_L": 3.0,
+    "nx": 2,
+    "ny": 2,
+    "interasse_x": 1.5,
+    "interasse_y": 1.5,
+    "palo_diametro": 0.6,
+    "palo_lunghezza": 15.0,
+    "N": 4000.0,
+    "Mx": 0.0,
+    "My": 0.0,
+    "Nq": 25.0,
+    "Nc": 9.0,
+    "alpha": 0.7,
+    "beta": 0.3,
+    "kh": 0.0,
+    "kv": 0.0,
+    "falda": 99.0,
+    "stratigrafia_csv": "20.0,18,20,32,0,30000"
+  },
+  "risultati_attesi": {
+    "Qult_singolo": {
+      "valore": 2450.6,
+      "unita": "kN",
+      "tolleranza_percentuale": 1.0
+    },
+    "R_palo_max_stat": {
+      "valore": 1000.0,
+      "unita": "kN",
+      "tolleranza_percentuale": 0.1,
+      "nota": "Ripartizione simmetrica: 4000 kN / 4 pali = 1000 kN/palo"
+    }
+  },
+  "esito_atteso": "VERIFICATO",
+  "note_test": "Caso base per verificare che la ripartizione dei carichi funzioni correttamente in assenza di momenti e che la capacità del singolo palo sia calcolata come atteso."
+}

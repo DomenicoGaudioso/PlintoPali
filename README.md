@@ -1,11 +1,18 @@
 # PlintoPali - Analisi Statica e Sismica di Plinti su Pali
 ![alt text](socialPlintoPalo.png)
 
-Applicazione web interattiva basata su Streamlit per il calcolo e la verifica di fondazioni profonde (plinti su pali). Il tool esegue l'analisi della capacità portante del palo singolo e calcola la ripartizione dei carichi sui pali del gruppo in condizioni statiche e sismiche, tenendo conto della stratigrafia del terreno e della presenza di falda acquifera.
+**PlintoPali** è un'applicazione web interattiva per il calcolo e la verifica di fondazioni profonde (plinti su pali). Il tool esegue l'analisi della capacità portante del palo singolo e calcola la ripartizione dei carichi sui pali del gruppo in condizioni statiche e sismiche.
+
+L'app segue la struttura standard delle applicazioni CivilBox, separando l'interfaccia utente, il motore di calcolo e la reportistica:
+
+*   `app.py`: Interfaccia Streamlit, gestione input/output e visualizzazione risultati.
+*   `src.py`: Motore di calcolo geotecnico e strutturale.
+*   `report.py`: Generazione della relazione tecnica in formato `.docx`.
+*   `test/`: Suite di benchmark per la validazione numerica continua.
 
 ## 📖 Fondamenti Teorici
 
-Il motore di calcolo dell'applicazione si basa su principi consolidati di geotecnica e meccanica delle strutture.
+Il motore di calcolo si basa su principi consolidati di geotecnica e ingegneria strutturale.
 
 ### 1. Tensioni Efficaci e Falda
 Le tensioni verticali efficaci $\sigma'_{v}$ vengono calcolate integrando i pesi di volume del terreno. In presenza di falda acquifera, il peso dell'unità di volume viene decurtato della spinta idrostatica, utilizzando il peso di volume alleggerito $\gamma' = \gamma_{sat} - \gamma_{w}$.
@@ -36,11 +43,12 @@ L'applicazione accetta i seguenti parametri tramite barra laterale:
 * **Geometria Plinto:** Dimensioni $B$ ed $L$, numero di pali per direzione ($n_x$, $n_y$), e interassi.
 * **Geometria Palo:** Diametro e lunghezza.
 * **Azioni di Progetto:** Sforzo normale $N$ e momenti flettenti $M_x$, $M_y$.
-* **Parametri Geotecnici:** Coefficienti di portanza ($N_q$, $N_c$), coefficienti di attrito ($\alpha$, $\beta$) e fattore di sicurezza globale.
+* **Parametri Geotecnici:** Coefficienti di portanza ($N_q$, $N_c$), di attrito ($\alpha$, $\beta$) e fattori di sicurezza.
 * **Azione Sismica e Falda:** Coefficienti sismici $k_h$ e $k_v$, e profondità della falda dal piano campagna.
 * **Stratigrafia:** Formato CSV multiriga contenente spessore, $\gamma_{dry}$, $\gamma_{sat}$, angolo di attrito $\phi$, coesione non drenata $c_u$ e modulo $k$.
 
 ### Output
+L'applicazione fornisce output chiari e pronti per la documentazione di progetto.
 * **Metriche di Sintesi:** Numero totale dei pali, portata ammissibile, e fattori di sicurezza minimi.
 * **Avvisi e Note Tecniche:** Controlli automatici su trazione dei pali, superamento della portata e interferenze da "effetto gruppo".
 * **Tabelle:** Sintesi dei parametri e tabella comparativa delle reazioni statiche vs sismiche esportabile in CSV.
@@ -50,26 +58,33 @@ L'applicazione accetta i seguenti parametri tramite barra laterale:
 * **Doppio Motore di Calcolo:** Confronto diretto tra l'ipotesi di plinto rigido (Navier) e plinto flessibile (FEM a graticcio).
 * **Interfaccia Intuitiva:** Sviluppata interamente in Streamlit per un utilizzo immediato tramite browser.
 * **Layout pali tabellare:** Supporto a coordinate `x,y` irregolari tramite tabella editabile e JSON, mantenendo la griglia `n_x`/`n_y` esistente.
-* **Import/Export:** Salvataggio e ricaricamento degli input in formato JSON.
+* **Import/Export:** Salvataggio e ricaricamento degli input in formato JSON e XLSX.
 * **Analisi Comparativa:** Valutazione simultanea delle combinazioni statiche e pseudo-statiche (sismiche).
 * **Grafica Avanzata:** Utilizzo di `plotly.graph_objects` per rendering di geometrie e distribuzioni di carico.
+* **Reportistica Professionale:** Generazione di una relazione tecnica completa in formato `.docx`.
 
 ## 🛠 Requisiti di Sistema
 
 * Python 3.8 o superiore
-* Librerie: `streamlit`, `numpy`, `pandas`, `plotly`
+* Librerie: `streamlit`, `numpy`, `pandas`, `plotly`, `python-docx`, `openseespy`
 
 ## 🚀 Installazione
 
-1.  (Opzionale) Clona il repository del progetto:
+1.  Clona il repository del progetto:
     ```bash
-    # git clone https://github.com/DomenicoGaudioso/CivilBox-Apps.git
-    # cd CivilBox-Apps/PlintoPali
+    git clone https://github.com/username/plintopali.git
+    cd plintopali
     ```
 2.  Installa le dipendenze richieste:
     ```bash
     pip install -r requirements.txt
     ```
+
+## ✅ Validazione e Benchmark
+L'accuratezza del software è verificata tramite una suite di test nella cartella `test/`. Per eseguire i benchmark:
+```bash
+python test/run_benchmarks.py
+```
 
 ## 💻 Utilizzo
 
@@ -81,4 +96,4 @@ L'interfaccia si aprirà automaticamente nel tuo browser predefinito, solitament
 
 ## 🤝 Contributi
 
-I contributi sono benvenuti! Sentiti libero di aprire una Issue per segnalare bug o proporre nuove funzionalità, oppure invia una Pull Request con le tue migliorie.
+I contributi sono benvenuti. Sentiti libero di aprire una Issue per segnalare bug o proporre nuove funzionalità, oppure invia una Pull Request con le tue migliorie.
