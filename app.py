@@ -207,21 +207,24 @@ with st.sidebar:
     except Exception as exc:
         st.warning(f"Relazione Word non disponibile: {exc}")
 
-cols = st.columns(4)
-cols[0].metric("Pali totali", f"{len(risultati['statico']['x'])}")
-cols[1].metric("Q amm palo", f"{risultati['Qamm_effettiva_palo']:.2f} kN")
-cols[2].metric("FS minimo rigido", f"{float(risultati['statico']['FS'].min()):.2f}")
-cols[3].metric("Cedimento gruppo", f"{risultati['cedimento_gruppo_mm']:.2f} mm")
+df_risultati_principali = pd.DataFrame([
+    {"Parametro": "Pali totali", "Valore": f"{len(risultati['statico']['x'])}", "Unita": "-", "Esito/nota": "-"},
+    {"Parametro": "Q amm palo", "Valore": f"{risultati['Qamm_effettiva_palo']:.2f}", "Unita": "kN", "Esito/nota": "-"},
+    {"Parametro": "FS minimo rigido", "Valore": f"{float(risultati['statico']['FS'].min()):.2f}", "Unita": "-", "Esito/nota": "-"},
+    {"Parametro": "Cedimento gruppo", "Valore": f"{risultati['cedimento_gruppo_mm']:.2f}", "Unita": "mm", "Esito/nota": "-"},
+])
+st.subheader("Risultati principali")
+st.dataframe(df_risultati_principali, use_container_width=True, hide_index=True)
 
-tabs = st.tabs(["Sintesi", "Geometria", "Reazioni", "Verifiche", "Log tecnico"])
+sez_sintesi, sez_geometria, sez_reazioni, sez_verifiche, sez_log = [st.container() for _ in range(5)]
 
-with tabs[0]:
+with sez_sintesi:
     st.subheader("Sintesi")
     st.dataframe(sintesi, use_container_width=True, hide_index=True)
     st.subheader("Confronto pali")
     st.dataframe(confronto, use_container_width=True, hide_index=True)
 
-with tabs[1]:
+with sez_geometria:
     left, right = st.columns([1.3, 1.0])
     with left:
         st.plotly_chart(figura_geometria(dati, risultati), use_container_width=True)
@@ -230,12 +233,12 @@ with tabs[1]:
     st.plotly_chart(figura_mesh_fem(dati, risultati), use_container_width=True)
     st.plotly_chart(figura_stratigrafia(risultati), use_container_width=True)
 
-with tabs[2]:
+with sez_reazioni:
     st.plotly_chart(figura_output(risultati, "statico"), use_container_width=True)
     st.plotly_chart(figura_output(risultati, "sismico"), use_container_width=True)
     st.plotly_chart(figura_comparativa(risultati), use_container_width=True)
 
-with tabs[3]:
+with sez_verifiche:
     st.subheader("Verifiche")
     st.dataframe(verifiche, use_container_width=True, hide_index=True)
     if (verifiche["Esito"] == "NON VERIFICATO").any():
@@ -243,7 +246,7 @@ with tabs[3]:
     else:
         st.success("Le verifiche principali risultano soddisfatte.")
 
-with tabs[4]:
+with sez_log:
     warnings = genera_warning(dati, risultati)
     if warnings:
         for warning in warnings:
